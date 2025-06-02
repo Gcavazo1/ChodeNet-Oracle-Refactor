@@ -112,7 +112,7 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
 
   updateMetrics: async (metrics) => {
     try {
-      console.log('DevPanel: Calling admin-update-girth-index with metrics:', metrics);
+      console.log('DevPanel: Updating metrics via Edge Function:', metrics);
       
       const currentState = get();
       const updates = {
@@ -125,16 +125,26 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
       // Update local state immediately for responsiveness
       set({ ...metrics });
 
-      // Update via Edge Function
-      const { data, error } = await supabase.functions.invoke('admin-update-girth-index', {
-        body: updates
+      // Call the Edge Function directly using fetch
+      const response = await fetch('https://errgidlsmozmfnsoyxvw.supabase.co/functions/v1/admin-update-girth-index', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(updates)
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Edge Function error: ${errorData.message || response.statusText}`);
+      }
 
-      console.info('DevPanel: Girth Index successfully updated via admin panel:', data);
+      const data = await response.json();
+      console.info('DevPanel: Girth Index successfully updated via Edge Function:', data);
     } catch (error) {
-      console.error('DevPanel: Error updating Girth Index via admin panel:', error);
+      console.error('DevPanel: Error updating Girth Index via Edge Function:', error);
       
       // Revert to previous state on error
       const { data } = await supabase

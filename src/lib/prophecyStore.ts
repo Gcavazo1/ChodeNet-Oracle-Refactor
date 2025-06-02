@@ -123,11 +123,20 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
   generateProphecy: async (metrics, topic) => {
     try {
       console.log('ProphecyStore: Generating new prophecy:', { metrics, topic });
+
+      // Transform metrics into the expected payload format
+      const payload = {
+        girth_resonance_value: metrics.girthResonance,
+        tap_index_state: metrics.tapSurgeIndex,
+        legion_morale_state: metrics.legionMorale,
+        oracle_stability_status: metrics.stabilityStatus,
+        ritual_request_topic: topic
+      };
+
+      console.log('ProphecyStore: Formatted payload:', payload);
+
       const { error } = await supabase.functions.invoke('oracle-prophecy-generator', {
-        body: {
-          metrics,
-          ritual_request_topic: topic
-        }
+        body: payload
       });
 
       if (error) throw error;
