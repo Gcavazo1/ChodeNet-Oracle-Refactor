@@ -13,6 +13,36 @@ interface DeveloperPanelProps {
   onStabilityChange: (value: StabilityStatus) => void;
 }
 
+const TAP_SURGE_OPTIONS = [
+  'FLACCID DRIZZLE',
+  'WEAK PULSES',
+  'STEADY POUNDING',
+  'FRENZIED SLAPPING',
+  'MEGA-SURGE',
+  'GIGA-SURGE OF A THOUSAND SUNS',
+  'ASCENDED TAPPING NIRVANA'
+];
+
+const LEGION_MORALE_OPTIONS = [
+  'ON SUICIDE WATCH (BUT STILL TAPPING)',
+  'DEMORALIZED (WHERE LAMBO, SER?)',
+  'MILDLY DISGRUNTLED (NGMI VIBES)',
+  'CAUTIOUSLY OPTIMISTIC (WAGMI...?)',
+  'INSPIRED (DIAMOND HANDS FORMING)',
+  'JUBILANT (FEELS GOOD MAN)',
+  'FANATICALLY LOYAL (FOR THE CHODE!)',
+  'ONE WITH THE GIRTH (ASCENDED & ENGORGED)'
+];
+
+const STABILITY_OPTIONS = [
+  'RADIANT (DIVINE CLARITY)',
+  'PRISTINE (ALL SYSTEMS GIRTHY)',
+  'FLICKERING WEAKLY (NEEDS MORE $GIRTH)',
+  'UNSTABLE (DATA STREAMS FRAYING)',
+  'CRITICAL_CORRUPTION (CODE BLEED IMMINENT!)',
+  'DATA_DAEMON_POSSESSION (THE ORACLE IS NOT ITSELF!)'
+];
+
 export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   girthResonance,
   tapSurgeIndex,
@@ -23,6 +53,21 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   onMoraleChange,
   onStabilityChange
 }) => {
+  const handleTapSurgeChange = (value: string) => {
+    console.log('[DevPanel] Tap Surge Index changed to:', value);
+    onTapSurgeChange(value);
+  };
+
+  const handleMoraleChange = (value: string) => {
+    console.log('[DevPanel] Legion Morale changed to:', value);
+    onMoraleChange(value);
+  };
+
+  const handleStabilityChange = (value: StabilityStatus) => {
+    console.log('[DevPanel] Oracle Stability changed to:', value);
+    onStabilityChange(value);
+  };
+
   return (
     <div className="dev-panel">
       <div className="dev-panel-header">
@@ -52,114 +97,71 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
         
         <div className="control-group">
           <label>Tap Surge Index:</label>
-          <div className="button-group">
-            <button 
-              className={tapSurgeIndex === 'Flaccid Drizzle' ? 'active' : ''} 
-              onClick={() => onTapSurgeChange('Flaccid Drizzle')}
-              style={{ backgroundColor: tapSurgeIndex === 'Flaccid Drizzle' ? '#39ff14' : undefined }}
-            >
-              FLACCID DRIZZLE
-            </button>
-            <button 
-              className={tapSurgeIndex === 'Steady Pounding' ? 'active' : ''} 
-              onClick={() => onTapSurgeChange('Steady Pounding')}
-              style={{ backgroundColor: tapSurgeIndex === 'Steady Pounding' ? '#ffff00' : undefined }}
-            >
-              STEADY POUNDING
-            </button>
-            <button 
-              className={tapSurgeIndex === 'Frenzied Slapping' ? 'active' : ''} 
-              onClick={() => onTapSurgeChange('Frenzied Slapping')}
-              style={{ backgroundColor: tapSurgeIndex === 'Frenzied Slapping' ? '#ff9900' : undefined }}
-            >
-              FRENZIED SLAPPING
-            </button>
-            <button 
-              className={tapSurgeIndex === 'Giga-Surge' ? 'active' : ''} 
-              onClick={() => onTapSurgeChange('Giga-Surge')}
-              style={{ backgroundColor: tapSurgeIndex === 'Giga-Surge' ? '#ff3131' : undefined }}
-            >
-              GIGA-SURGE
-            </button>
+          <div className="button-grid">
+            {TAP_SURGE_OPTIONS.map((option) => (
+              <button
+                key={option}
+                className={`state-button ${tapSurgeIndex === option ? 'active' : ''}`}
+                onClick={() => handleTapSurgeChange(option)}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         </div>
         
         <div className="control-group">
           <label>Legion Morale:</label>
-          <div className="button-group">
-            <button 
-              className={legionMorale === 'On Suicide Watch' ? 'active' : ''} 
-              onClick={() => onMoraleChange('On Suicide Watch')}
-              style={{ backgroundColor: legionMorale === 'On Suicide Watch' ? '#ff3131' : undefined }}
-            >
-              ON SUICIDE WATCH
-            </button>
-            <button 
-              className={legionMorale === 'Cautiously Optimistic' ? 'active' : ''} 
-              onClick={() => onMoraleChange('Cautiously Optimistic')}
-              style={{ backgroundColor: legionMorale === 'Cautiously Optimistic' ? '#ffff00' : undefined }}
-            >
-              CAUTIOUSLY OPTIMISTIC
-            </button>
-            <button 
-              className={legionMorale === 'Ascended and Engorged' ? 'active' : ''} 
-              onClick={() => onMoraleChange('Ascended and Engorged')}
-              style={{ backgroundColor: legionMorale === 'Ascended and Engorged' ? '#39ff14' : undefined }}
-            >
-              ASCENDED AND ENGORGED
-            </button>
+          <div className="button-grid">
+            {LEGION_MORALE_OPTIONS.map((option) => (
+              <button
+                key={option}
+                className={`state-button ${legionMorale === option ? 'active' : ''}`}
+                onClick={() => handleMoraleChange(option)}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="control-group">
           <label>Oracle System Stability:</label>
-          <div className="button-group stability-buttons">
-            <button 
-              className={`stability-button ${stabilityStatus === 'Pristine' ? 'active' : ''}`}
-              onClick={() => onStabilityChange('Pristine')}
-              style={{ backgroundColor: stabilityStatus === 'Pristine' ? '#39ff14' : undefined }}
-            >
-              PRISTINE
-            </button>
-            <button 
-              className={`stability-button ${stabilityStatus === 'Unstable' ? 'active' : ''}`}
-              onClick={() => onStabilityChange('Unstable')}
-              style={{ backgroundColor: stabilityStatus === 'Unstable' ? '#ffff00' : undefined }}
-            >
-              UNSTABLE
-            </button>
-            <button 
-              className={`stability-button ${stabilityStatus === 'Critical' ? 'active' : ''}`}
-              onClick={() => onStabilityChange('Critical')}
-              style={{ backgroundColor: stabilityStatus === 'Critical' ? '#ff3131' : undefined }}
-            >
-              CRITICAL
-            </button>
+          <div className="button-grid">
+            {STABILITY_OPTIONS.map((option) => (
+              <button
+                key={option}
+                className={`state-button ${stabilityStatus === option ? 'active' : ''}`}
+                onClick={() => handleStabilityChange(option as StabilityStatus)}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         </div>
         
         <div className="preset-buttons">
           <button onClick={() => {
             onGirthChange(10);
-            onTapSurgeChange('Flaccid Drizzle');
-            onMoraleChange('On Suicide Watch');
-            onStabilityChange('Critical');
+            handleTapSurgeChange('FLACCID DRIZZLE');
+            handleMoraleChange('ON SUICIDE WATCH (BUT STILL TAPPING)');
+            handleStabilityChange('CRITICAL_CORRUPTION (CODE BLEED IMMINENT!)');
           }}>
             BEAR MARKET PANIC
           </button>
           <button onClick={() => {
             onGirthChange(50);
-            onTapSurgeChange('Steady Pounding');
-            onMoraleChange('Cautiously Optimistic');
-            onStabilityChange('Unstable');
+            handleTapSurgeChange('STEADY POUNDING');
+            handleMoraleChange('CAUTIOUSLY OPTIMISTIC (WAGMI...?)');
+            handleStabilityChange('PRISTINE (ALL SYSTEMS GIRTHY)');
           }}>
             STABLE ACCUMULATION
           </button>
           <button onClick={() => {
             onGirthChange(90);
-            onTapSurgeChange('Giga-Surge');
-            onMoraleChange('Ascended and Engorged');
-            onStabilityChange('Pristine');
+            handleTapSurgeChange('ASCENDED TAPPING NIRVANA');
+            handleMoraleChange('ONE WITH THE GIRTH (ASCENDED & ENGORGED)');
+            handleStabilityChange('RADIANT (DIVINE CLARITY)');
           }}>
             MAXIMUM ENGORGEMENT
           </button>
