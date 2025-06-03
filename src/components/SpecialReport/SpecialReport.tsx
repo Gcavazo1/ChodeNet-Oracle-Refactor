@@ -18,7 +18,7 @@ export const SpecialReport: React.FC<SpecialReportProps> = ({
   return (
     <div className="special-report-modal">
       <div className="special-report-content">
-        <button className="close-button" onClick={onClose}>
+        <button className="close-button\" onClick={onClose}>
           <X size={24} />
         </button>
 
