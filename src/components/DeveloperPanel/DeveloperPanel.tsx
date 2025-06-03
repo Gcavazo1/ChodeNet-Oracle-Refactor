@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { type StabilityStatus } from '../../lib/types';
-import { runGhostLegionSimulation } from '../../lib/ghostScriptSimulator';
 import './DeveloperPanel.css';
 
 interface DeveloperPanelProps {
@@ -54,9 +53,6 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   onMoraleChange,
   onStabilityChange
 }) => {
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationTime, setSimulationTime] = useState<number | null>(null);
-
   const handleTapSurgeChange = (value: string) => {
     console.log('[DevPanel] Tap Surge Index changed to:', value);
     onTapSurgeChange(value);
@@ -70,19 +66,6 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   const handleStabilityChange = (value: StabilityStatus) => {
     console.log('[DevPanel] Oracle Stability changed to:', value);
     onStabilityChange(value);
-  };
-
-  const startGhostLegionSimulation = async () => {
-    setIsSimulating(true);
-    
-    await runGhostLegionSimulation(
-      30, // 30 seconds simulation
-      (remaining) => setSimulationTime(remaining),
-      () => {
-        setIsSimulating(false);
-        setSimulationTime(null);
-      }
-    );
   };
 
   return (
@@ -121,7 +104,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 className={`state-button ${tapSurgeIndex === option ? 'active' : ''}`}
                 onClick={() => handleTapSurgeChange(option)}
               >
-                {option.replace(/_/g, ' ')}
+                {option}
               </button>
             ))}
           </div>
@@ -136,7 +119,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 className={`state-button ${legionMorale === option ? 'active' : ''}`}
                 onClick={() => handleMoraleChange(option)}
               >
-                {option.replace(/_/g, ' ')}
+                {option}
               </button>
             ))}
           </div>
@@ -151,29 +134,12 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 className={`state-button ${stabilityStatus === option ? 'active' : ''}`}
                 onClick={() => handleStabilityChange(option as StabilityStatus)}
               >
-                {option.replace(/_/g, ' ')}
+                {option}
               </button>
             ))}
           </div>
         </div>
         
-        <div className="ghost-legion-controls">
-          <button
-            className={`ghost-legion-button ${isSimulating ? 'simulating' : ''}`}
-            onClick={startGhostLegionSimulation}
-            disabled={isSimulating}
-          >
-            {isSimulating 
-              ? `Ghost Legion Tapping Furiously... (${simulationTime}s)`
-              : 'UNLEASH GHOST LEGION!'}
-          </button>
-          {isSimulating && (
-            <div className="simulation-status">
-              Simulating intense player activity...
-            </div>
-          )}
-        </div>
-
         <div className="preset-buttons">
           <button onClick={() => {
             onGirthChange(10);
