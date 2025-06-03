@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor } from 'lucide-react';
+import { Monitor, Radio } from 'lucide-react';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { ProphecyChamber } from './components/ProphecyChamber/ProphecyChamber';
 import { ApocryphalScrolls } from './components/ApocryphalScrolls/ApocryphalScrolls';
 import { RitualRequests } from './components/RitualRequests/RitualRequests';
 import { DeveloperPanel } from './components/DeveloperPanel/DeveloperPanel';
 import { DebugPanel } from './components/DebugPanel/DebugPanel';
+import { SpecialReport } from './components/SpecialReport/SpecialReport';
 import { setupGameEventListener } from './lib/gameEventHandler';
 import { useGirthIndexStore } from './lib/girthIndexStore';
 import './App.css';
@@ -14,6 +15,7 @@ function App() {
   const [currentView, setCurrentView] = useState<'prophecy' | 'scrolls' | 'ritual'>('prophecy');
   const [currentTopic, setCurrentTopic] = useState<string | null>(null);
   const [showDevPanel, setShowDevPanel] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   
   const {
     girthResonance,
@@ -26,16 +28,19 @@ function App() {
     updateMetrics
   } = useGirthIndexStore();
 
-  // Set up game event listener
   useEffect(() => {
     const cleanup = setupGameEventListener();
     return cleanup;
   }, []);
 
-  // Set up Supabase realtime subscription
   useEffect(() => {
     setupRealtimeSubscription();
   }, [setupRealtimeSubscription]);
+
+  const initiateSpecialReport = () => {
+    console.log('Chodefather has commanded: Initiate Special Report Generation Sequence! Contacting Supabase function: generate-special-report...');
+    setIsReportOpen(true);
+  };
 
   if (isLoading) {
     return <div className="loading">Loading Girth Index...</div>;
@@ -52,12 +57,21 @@ function App() {
           <Monitor size={32} color="#ff00ff" />
           <span>CHODE-NET ORACLE</span>
         </div>
-        <button 
-          className="dev-panel-toggle"
-          onClick={() => setShowDevPanel(!showDevPanel)}
-        >
-          {showDevPanel ? 'HIDE CONTROLS' : 'SHOW CONTROLS'}
-        </button>
+        <div className="header-controls">
+          <button 
+            className="special-report-button"
+            onClick={initiateSpecialReport}
+          >
+            <Radio size={18} />
+            SPECIAL REPORT
+          </button>
+          <button 
+            className="dev-panel-toggle"
+            onClick={() => setShowDevPanel(!showDevPanel)}
+          >
+            {showDevPanel ? 'HIDE CONTROLS' : 'SHOW CONTROLS'}
+          </button>
+        </div>
       </header>
 
       <main className="app-main">
@@ -143,9 +157,14 @@ function App() {
         </div>
       </footer>
 
+      <SpecialReport 
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+      />
+
       <DebugPanel />
     </div>
   );
 }
 
-export default App
+export default App;
