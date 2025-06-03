@@ -8,6 +8,13 @@ interface EventLog {
   message: string;
 }
 
+interface NotificationState {
+  isNewSpecialReportAvailable: boolean;
+  latestSpecialReportId: string | null;
+  setSpecialReportAvailable: (id: string) => void;
+  clearSpecialReportNotification: () => void;
+}
+
 interface DebugStore {
   isDebugMode: boolean;
   eventLogs: EventLog[];
@@ -15,6 +22,18 @@ interface DebugStore {
   addEventLog: (log: Omit<EventLog, 'id' | 'timestamp'>) => void;
   clearEventLogs: () => void;
 }
+
+export const useNotificationStore = create<NotificationState>((set) => ({
+  isNewSpecialReportAvailable: false,
+  latestSpecialReportId: null,
+  setSpecialReportAvailable: (id: string) => set({
+    isNewSpecialReportAvailable: true,
+    latestSpecialReportId: id
+  }),
+  clearSpecialReportNotification: () => set({
+    isNewSpecialReportAvailable: false
+  })
+}));
 
 export const useDebugStore = create<DebugStore>((set) => ({
   isDebugMode: false,
