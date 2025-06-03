@@ -14,6 +14,7 @@ export const TapSurgeDisplay: React.FC<TapSurgeDisplayProps> = ({ value }) => {
   
   const currentState = TAP_SURGE_STATES[safeValue];
   const allStates = Object.entries(TAP_SURGE_STATES);
+  const currentIndex = allStates.findIndex(([key]) => key === safeValue);
   
   return (
     <div className="tap-surge-container">
@@ -36,10 +37,10 @@ export const TapSurgeDisplay: React.FC<TapSurgeDisplayProps> = ({ value }) => {
             key={stateKey}
             className={`tap-meter-segment ${stateKey === safeValue ? 'active' : ''}`}
             style={{ 
-              backgroundColor: index <= allStates.findIndex(([key]) => key === safeValue) 
+              backgroundColor: index <= currentIndex 
                 ? stateData.color 
                 : 'rgba(255, 255, 255, 0.1)',
-              boxShadow: index <= allStates.findIndex(([key]) => key === safeValue)
+              boxShadow: index <= currentIndex
                 ? `0 0 10px ${stateData.color}` 
                 : 'none'
             }}

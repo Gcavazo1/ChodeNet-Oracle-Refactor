@@ -1,28 +1,37 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
-import { GirthIndexValues, StabilityStatus, TAP_SURGE_STATES, LEGION_MORALE_STATES } from './types';
+import { 
+  GirthIndexValues, 
+  StabilityStatus, 
+  TAP_SURGE_STATES, 
+  LEGION_MORALE_STATES,
+  STABILITY_STATES,
+  TapSurgeState,
+  LegionMoraleState,
+  StabilityStateType
+} from './types';
 
 interface GirthIndexStore {
   girthResonance: number;
-  tapSurgeIndex: string;
-  legionMorale: string;
-  stabilityStatus: StabilityStatus;
+  tapSurgeIndex: TapSurgeState;
+  legionMorale: LegionMoraleState;
+  stabilityStatus: StabilityStateType;
   isLoading: boolean;
   error: string | null;
   setupRealtimeSubscription: () => Promise<void>;
   updateMetrics: (metrics: Partial<{
     girthResonance: number;
-    tapSurgeIndex: string;
-    legionMorale: string;
-    stabilityStatus: StabilityStatus;
+    tapSurgeIndex: TapSurgeState;
+    legionMorale: LegionMoraleState;
+    stabilityStatus: StabilityStateType;
   }>) => Promise<void>;
 }
 
 export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
   girthResonance: 50,
-  tapSurgeIndex: 'Steady Pounding',
-  legionMorale: 'Cautiously Optimistic',
-  stabilityStatus: 'Pristine',
+  tapSurgeIndex: 'STEADY_POUNDING',
+  legionMorale: 'CAUTIOUS',
+  stabilityStatus: 'PRISTINE',
   isLoading: true,
   error: null,
 
@@ -47,9 +56,9 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
         
         set({
           girthResonance: data.divine_girth_resonance,
-          tapSurgeIndex: data.tap_surge_index,
-          legionMorale: data.legion_morale,
-          stabilityStatus: data.oracle_stability_status as StabilityStatus,
+          tapSurgeIndex: data.tap_surge_index as TapSurgeState,
+          legionMorale: data.legion_morale as LegionMoraleState,
+          stabilityStatus: data.oracle_stability_status as StabilityStateType,
           isLoading: false
         });
 
@@ -85,9 +94,9 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
 
             set({
               girthResonance: newData.divine_girth_resonance,
-              tapSurgeIndex: newData.tap_surge_index,
-              legionMorale: newData.legion_morale,
-              stabilityStatus: newData.oracle_stability_status as StabilityStatus
+              tapSurgeIndex: newData.tap_surge_index as TapSurgeState,
+              legionMorale: newData.legion_morale as LegionMoraleState,
+              stabilityStatus: newData.oracle_stability_status as StabilityStateType
             });
 
             console.log('GirthIndexStore: Store updated with new data:', get());
@@ -157,9 +166,9 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
         console.log('DevPanel: Reverting to previous state after error:', data);
         set({
           girthResonance: data.divine_girth_resonance,
-          tapSurgeIndex: data.tap_surge_index,
-          legionMorale: data.legion_morale,
-          stabilityStatus: data.oracle_stability_status as StabilityStatus
+          tapSurgeIndex: data.tap_surge_index as TapSurgeState,
+          legionMorale: data.legion_morale as LegionMoraleState,
+          stabilityStatus: data.oracle_stability_status as StabilityStateType
         });
       }
     }
