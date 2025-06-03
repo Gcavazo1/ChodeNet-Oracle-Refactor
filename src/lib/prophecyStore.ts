@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
+import { ProphecyCorruptionLevel } from './types';
 
 export interface Prophecy {
   id: string;
   created_at: string;
   prophecy_text: string;
-  corruption_level: 'none' | 'glitched' | 'cryptic' | 'hostile_fragment';
+  corruption_level: ProphecyCorruptionLevel;
   source_metrics_snapshot?: Record<string, any>;
 }
 
@@ -31,7 +32,6 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
   setupRealtimeSubscription: async () => {
     console.log('ProphecyStore: Setting up realtime subscription...');
     try {
-      // Initial fetch of recent prophecies
       console.log('ProphecyStore: Fetching initial prophecies...');
       const { data: initialProphecies, error: fetchError } = await supabase
         .from('apocryphal_scrolls')
@@ -52,7 +52,6 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
         console.log('ProphecyStore: Successfully fetched prophecies:', initialProphecies.length);
       }
 
-      // Update store with initial data
       set((state) => {
         console.log('ProphecyStore: Updating store with initial prophecies:', {
           currentCount: state.prophecies.length,
@@ -65,7 +64,6 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
         };
       });
 
-      // Setup realtime subscription
       console.log('ProphecyStore: Setting up Supabase channel subscription...');
       const subscription = supabase
         .channel('prophecy-feed')
@@ -93,7 +91,6 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
 
             get().incrementUnreadCount();
 
-            // Notify game iframe
             const gameFrame = document.querySelector<HTMLIFrameElement>('.game-frame');
             if (gameFrame?.contentWindow) {
               gameFrame.contentWindow.postMessage({
@@ -124,7 +121,6 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
     try {
       console.log('ProphecyStore: Generating new prophecy:', { metrics, topic });
 
-      // Transform metrics into the expected payload format
       const payload = {
         girth_resonance_value: metrics.girthResonance,
         tap_index_state: metrics.tapSurgeIndex,
