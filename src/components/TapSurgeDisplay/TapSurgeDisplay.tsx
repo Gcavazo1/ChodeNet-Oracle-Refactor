@@ -7,10 +7,10 @@ interface TapSurgeDisplayProps {
 }
 
 export const TapSurgeDisplay: React.FC<TapSurgeDisplayProps> = ({ value }) => {
-  // Default to 'Steady Pounding' if value is invalid
+  // Default to 'STEADY_POUNDING' if value is invalid
   const safeValue: TapSurgeState = TAP_SURGE_STATES[value] 
     ? value 
-    : 'Steady Pounding';
+    : 'STEADY_POUNDING';
   
   const currentState = TAP_SURGE_STATES[safeValue];
   const allStates = Object.entries(TAP_SURGE_STATES);
@@ -19,7 +19,7 @@ export const TapSurgeDisplay: React.FC<TapSurgeDisplayProps> = ({ value }) => {
     <div className="tap-surge-container">
       <div className="tap-surge-label">STATUS:</div>
       <div 
-        className="tap-surge-value" 
+        className={`tap-surge-value ${currentState.animation}`}
         style={{ 
           color: currentState.color,
           textShadow: `0 0 10px ${currentState.color}, 0 0 20px ${currentState.color}`

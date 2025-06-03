@@ -37,6 +37,121 @@
   animation: warning-flash 1s infinite;
 }
 
+.stability-description {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* Animation states */
+.stability-radiant .stability-bar {
+  animation: crystal-glow 3s infinite;
+  background: linear-gradient(to bottom, #ffffff, #e2e8f0);
+}
+
+.stability-pristine .stability-bar {
+  animation: stable-pulse 4s infinite;
+  background: #4299e1;
+}
+
+.stability-flickering .stability-bar {
+  animation: weak-flicker 1s infinite;
+  background: #ecc94b;
+}
+
+.stability-unstable .stability-bar {
+  animation: scanline-effect 2s infinite;
+  background: #ed8936;
+}
+
+.stability-critical .stability-bar {
+  animation: critical-glitch 0.3s infinite;
+  background: #e53e3e;
+}
+
+.stability-possessed .stability-bar {
+  animation: daemon-possession 0.1s infinite;
+  background: #000000;
+}
+
+@keyframes crystal-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px #ffffff,
+      0 0 40px #ffffff,
+      0 0 60px #ffffff;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 
+      0 0 30px #ffffff,
+      0 0 60px #ffffff,
+      0 0 90px #ffffff;
+    opacity: 0.8;
+  }
+}
+
+@keyframes stable-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px #4299e1;
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 10px #4299e1;
+  }
+}
+
+@keyframes weak-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes scanline-effect {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 150px;
+  }
+}
+
+@keyframes critical-glitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-2px, 2px);
+  }
+  75% {
+    transform: translate(2px, -2px);
+  }
+}
+
+@keyframes daemon-possession {
+  0%, 100% {
+    transform: translate(0);
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    transform: translate(-3px, 3px);
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    transform: translate(3px, -3px);
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    transform: translate(-3px, -3px);
+    filter: hue-rotate(270deg);
+  }
+}
+
 @keyframes warning-flash {
   0%, 100% {
     opacity: 1;
@@ -45,50 +160,5 @@
   50% {
     opacity: 0.5;
     transform: scale(0.95);
-  }
-}
-
-.pulse-critical .stability-bar {
-  animation: pulse-critical 0.5s infinite;
-}
-
-.pulse-warning .stability-bar {
-  animation: pulse-warning 2s infinite;
-}
-
-.pulse-stable .stability-bar {
-  animation: pulse-stable 3s infinite;
-}
-
-@keyframes pulse-critical {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 20px #ff3131;
-  }
-  50% {
-    opacity: 0.5;
-    box-shadow: 0 0 10px #ff3131;
-  }
-}
-
-@keyframes pulse-warning {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 15px #ffff00;
-  }
-  50% {
-    opacity: 0.7;
-    box-shadow: 0 0 8px #ffff00;
-  }
-}
-
-@keyframes pulse-stable {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 10px #39ff14;
-  }
-  50% {
-    opacity: 0.8;
-    box-shadow: 0 0 5px #39ff14;
   }
 }
