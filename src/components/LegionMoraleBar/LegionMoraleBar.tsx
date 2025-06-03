@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LEGION_MORALE_STATES, type LegionMoraleState } from '../../lib/types';
 import './LegionMoraleBar.css';
 
@@ -7,7 +7,9 @@ interface LegionMoraleBarProps {
 }
 
 export const LegionMoraleBar: React.FC<LegionMoraleBarProps> = ({ value }) => {
-  console.log('[LegionMoraleBar] State:', value);
+  useEffect(() => {
+    console.log('[LegionMoraleBar] Received legionMorale:', value);
+  }, [value]);
   
   // Default to 'CAUTIOUS' if value is invalid
   const safeValue: LegionMoraleState = LEGION_MORALE_STATES[value] 
@@ -23,7 +25,7 @@ export const LegionMoraleBar: React.FC<LegionMoraleBarProps> = ({ value }) => {
 
   return (
     <div className="legion-morale-container">
-      <div className="morale-bar-wrapper">
+      <div className={`stability-indicator ${safeValue.toLowerCase()}`}>
         <div 
           className="morale-bar-fill"
           style={{ 
@@ -31,30 +33,21 @@ export const LegionMoraleBar: React.FC<LegionMoraleBarProps> = ({ value }) => {
             background: `linear-gradient(90deg, ${currentState.color} 0%, ${currentState.color}aa 100%)`
           }}
         />
-        <div className="morale-progress">{progressPercentage.toFixed(0)}%</div>
-      </div>
-
-      <div 
-        className={`morale-state ${currentState.animation}`}
-        style={{ 
-          color: currentState.color,
-          textShadow: `0 0 10px ${currentState.color}`
-        }}
-      >
-        {currentState.label}
-      </div>
-
-      <div className="morale-markers">
-        {states.map(([key, state], index) => (
-          <div
-            key={key}
-            className={`morale-marker ${index <= currentIndex ? 'active' : ''}`}
-            style={{ 
-              color: state.color,
-              backgroundColor: index <= currentIndex ? state.color : undefined
-            }}
-          />
-        ))}
+        <div className="morale-state">
+          <span style={{ color: currentState.color }}>{currentState.label}</span>
+        </div>
+        <div className="morale-markers">
+          {states.map(([key, state], index) => (
+            <div
+              key={key}
+              className={`morale-marker ${index <= currentIndex ? 'active' : ''}`}
+              style={{ 
+                color: state.color,
+                backgroundColor: index <= currentIndex ? state.color : undefined
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

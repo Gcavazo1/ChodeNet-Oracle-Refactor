@@ -15,7 +15,9 @@ interface SystemStabilityProps {
 }
 
 export const SystemStability: React.FC<SystemStabilityProps> = ({ status }) => {
-  console.log('[SystemStability] State:', status);
+  useEffect(() => {
+    console.log('[SystemStability] Received stabilityStatus:', status);
+  }, [status]);
 
   const currentState = STABILITY_STATES[status] || DEFAULT_STABILITY_STYLE;
   const stateClass = `stability-${status?.toLowerCase() || 'unknown'}`;
@@ -31,7 +33,7 @@ export const SystemStability: React.FC<SystemStabilityProps> = ({ status }) => {
         />
         <div className="stability-status">
           {(status === 'CRITICAL_CORRUPTION' || status === 'DATA_DAEMON_POSSESSION') && (
-            <AlertTriangle className="warning-icon\" size={24} />
+            <AlertTriangle className="warning-icon" size={24} />
           )}
           <span style={{ color: currentState.color }}>{currentState.label}</span>
         </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TAP_SURGE_STATES, type TapSurgeState } from '../../lib/types';
 import './TapSurgeDisplay.css';
 
@@ -7,7 +7,9 @@ interface TapSurgeDisplayProps {
 }
 
 export const TapSurgeDisplay: React.FC<TapSurgeDisplayProps> = ({ value }) => {
-  console.log('[TapSurgeDisplay] State:', value);
+  useEffect(() => {
+    console.log('[TapSurgeDisplay] Received tapSurgeIndex:', value);
+  }, [value]);
   
   // Default to 'STEADY_POUNDING' if value is invalid
   const safeValue: TapSurgeState = TAP_SURGE_STATES[value] 

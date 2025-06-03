@@ -37,7 +37,7 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
 
   setupRealtimeSubscription: async () => {
     try {
-      console.log('GirthIndexStore: Setting up realtime subscription...');
+      console.log('[GirthIndexStore] Setting up realtime subscription...');
       
       // Initial fetch
       const { data, error } = await supabase
@@ -48,11 +48,13 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
 
       if (error) throw error;
 
-      console.log('GirthIndexStore: Initial Girth Index fetched:', data);
+      console.log('[GirthIndexStore] Initial Girth Index fetched:', data);
 
       if (data) {
-        const oldState = get();
-        console.log('GirthIndexStore: Updating store with initial data. Old state:', oldState);
+        console.log('[GirthIndexStore] Supabase payload.new:', data);
+        console.log('[GirthIndexStore] Setting tapSurgeIndex:', data.tap_surge_index);
+        console.log('[GirthIndexStore] Setting legionMorale:', data.legion_morale);
+        console.log('[GirthIndexStore] Setting oracleStabilityStatus:', data.oracle_stability_status);
         
         set({
           girthResonance: data.divine_girth_resonance,
@@ -62,7 +64,7 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
           isLoading: false
         });
 
-        console.log('GirthIndexStore: Store updated with initial data:', get());
+        console.log('[GirthIndexStore] Store updated with initial data:', get());
       }
 
       // Setup realtime subscription
@@ -77,21 +79,13 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
             filter: 'id=eq.1'
           },
           (payload) => {
-            console.log('GirthIndexStore: Realtime UPDATE for Girth Index received:', payload.new);
+            console.log('[GirthIndexStore] Realtime UPDATE received:', payload.new);
+            console.log('[GirthIndexStore] Setting tapSurgeIndex:', payload.new.tap_surge_index);
+            console.log('[GirthIndexStore] Setting legionMorale:', payload.new.legion_morale);
+            console.log('[GirthIndexStore] Setting oracleStabilityStatus:', payload.new.oracle_stability_status);
             
             const newData = payload.new as GirthIndexValues;
-            const oldState = get();
             
-            console.log('GirthIndexStore: Updating store with new Girth Index.', {
-              oldState,
-              newValues: {
-                girthResonance: newData.divine_girth_resonance,
-                tapSurgeIndex: newData.tap_surge_index,
-                legionMorale: newData.legion_morale,
-                stabilityStatus: newData.oracle_stability_status
-              }
-            });
-
             set({
               girthResonance: newData.divine_girth_resonance,
               tapSurgeIndex: newData.tap_surge_index as TapSurgeState,
@@ -99,19 +93,19 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
               stabilityStatus: newData.oracle_stability_status as StabilityStateType
             });
 
-            console.log('GirthIndexStore: Store updated with new data:', get());
+            console.log('[GirthIndexStore] Store updated via Realtime. New state:', get());
           }
         )
         .subscribe((status) => {
-          console.log('GirthIndexStore: Subscription status:', status);
+          console.log('[GirthIndexStore] Subscription status:', status);
         });
 
       return () => {
-        console.log('GirthIndexStore: Cleaning up subscription');
+        console.log('[GirthIndexStore] Cleaning up subscription');
         subscription.unsubscribe();
       };
     } catch (error) {
-      console.error('GirthIndexStore: Error in subscription setup:', error);
+      console.error('[GirthIndexStore] Error in subscription setup:', error);
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error',
         isLoading: false 
@@ -121,7 +115,7 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
 
   updateMetrics: async (metrics) => {
     try {
-      console.log('DevPanel: Updating metrics via Edge Function:', metrics);
+      console.log('[GirthIndexStore] Updating metrics:', metrics);
       
       const currentState = get();
       const updates = {
@@ -134,7 +128,6 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
       // Update local state immediately for responsiveness
       set({ ...metrics });
 
-      // Call the Edge Function directly using fetch
       const response = await fetch('https://errgidlsmozmfnsoyxvw.supabase.co/functions/v1/admin-update-girth-index', {
         method: 'POST',
         headers: {
@@ -151,9 +144,9 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
       }
 
       const data = await response.json();
-      console.info('DevPanel: Girth Index successfully updated via Edge Function:', data);
+      console.log('[GirthIndexStore] Metrics successfully updated:', data);
     } catch (error) {
-      console.error('DevPanel: Error updating Girth Index via Edge Function:', error);
+      console.error('[GirthIndexStore] Error updating metrics:', error);
       
       // Revert to previous state on error
       const { data } = await supabase
@@ -163,7 +156,7 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
         .single();
 
       if (data) {
-        console.log('DevPanel: Reverting to previous state after error:', data);
+        console.log('[GirthIndexStore] Reverting to previous state after error:', data);
         set({
           girthResonance: data.divine_girth_resonance,
           tapSurgeIndex: data.tap_surge_index as TapSurgeState,
