@@ -4,15 +4,14 @@ import { TapSurgeDisplay } from '../TapSurgeDisplay/TapSurgeDisplay';
 import { LegionMoraleBar } from '../LegionMoraleBar/LegionMoraleBar';
 import { SystemStability } from '../SystemStability/SystemStability';
 import { GlitchyTitle } from '../GlitchyTitle/GlitchyTitle';
+import { type StabilityStateType, type TapSurgeState, type LegionMoraleState } from '../../lib/types';
 import './Dashboard.css';
-
-export type StabilityStatus = 'STABLE' | 'UNSTABLE' | 'CRITICAL_CORRUPTION';
 
 interface DashboardProps {
   girthResonance: number;
-  tapSurgeIndex: number;
-  legionMorale: number;
-  stabilityStatus: StabilityStatus;
+  tapSurgeIndex: TapSurgeState;
+  legionMorale: LegionMoraleState;
+  stabilityStatus: StabilityStateType;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
