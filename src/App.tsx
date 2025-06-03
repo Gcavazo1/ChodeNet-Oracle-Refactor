@@ -7,8 +7,10 @@ import { RitualRequests } from './components/RitualRequests/RitualRequests';
 import { DeveloperPanel } from './components/DeveloperPanel/DeveloperPanel';
 import { DebugPanel } from './components/DebugPanel/DebugPanel';
 import { SpecialReport } from './components/SpecialReport/SpecialReport';
+import { Toast } from './components/Toast/Toast';
 import { setupGameEventListener } from './lib/gameEventHandler';
 import { useGirthIndexStore } from './lib/girthIndexStore';
+import { useNotificationStore } from './lib/store';
 import './App.css';
 
 function App() {
@@ -16,6 +18,7 @@ function App() {
   const [currentTopic, setCurrentTopic] = useState<string | null>(null);
   const [showDevPanel, setShowDevPanel] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   
   const {
     girthResonance,
@@ -28,6 +31,11 @@ function App() {
     updateMetrics
   } = useGirthIndexStore();
 
+  const {
+    isNewSpecialReportAvailable,
+    clearSpecialReportNotification
+  } = useNotificationStore();
+
   useEffect(() => {
     const cleanup = setupGameEventListener();
     return cleanup;
@@ -37,9 +45,16 @@ function App() {
     setupRealtimeSubscription();
   }, [setupRealtimeSubscription]);
 
-  const initiateSpecialReport = () => {
-    console.log('Chodefather has commanded: Initiate Special Report Generation Sequence! Contacting Supabase function: generate-special-report...');
+  useEffect(() => {
+    if (isNewSpecialReportAvailable) {
+      setShowToast(true);
+    }
+  }, [isNewSpecialReportAvailable]);
+
+  const handleSpecialReportClick = () => {
     setIsReportOpen(true);
+    clearSpecialReportNotification();
+    setShowToast(false);
   };
 
   if (isLoading) {
@@ -59,11 +74,12 @@ function App() {
         </div>
         <div className="header-controls">
           <button 
-            className="special-report-button"
-            onClick={initiateSpecialReport}
+            className={`special-report-button ${isNewSpecialReportAvailable ? 'new-report' : ''}`}
+            onClick={handleSpecialReportClick}
           >
-            <Radio size={18} />
+            <Radio size={18} className="report-icon" />
             SPECIAL REPORT
+            {isNewSpecialReportAvailable && <div className="notification-badge" />}
           </button>
           <button 
             className="dev-panel-toggle"
@@ -163,6 +179,14 @@ function App() {
       />
 
       <DebugPanel />
+
+      {showToast && (
+        <Toast
+          message="🚨 CHODE-NET ALERT! A new Oracle Special Report has been issued! Click to view!"
+          onClick={handleSpecialReportClick}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }
