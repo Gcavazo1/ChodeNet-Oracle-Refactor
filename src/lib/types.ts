@@ -1,3 +1,5 @@
+import { type } from "os";
+
 export type StabilityStatus = 
   | 'RADIANT_CLARITY'
   | 'PRISTINE'

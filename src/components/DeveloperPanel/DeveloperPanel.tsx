@@ -14,33 +14,33 @@ interface DeveloperPanelProps {
 }
 
 const TAP_SURGE_OPTIONS = [
-  'FLACCID DRIZZLE',
-  'WEAK PULSES',
-  'STEADY POUNDING',
-  'FRENZIED SLAPPING',
-  'MEGA-SURGE',
-  'GIGA-SURGE OF A THOUSAND SUNS',
-  'ASCENDED TAPPING NIRVANA'
+  'FLACCID_DRIZZLE',
+  'WEAK_PULSES',
+  'STEADY_POUNDING',
+  'FRENZIED_SLAPPING',
+  'MEGA_SURGE',
+  'GIGA_SURGE',
+  'ASCENDED_NIRVANA'
 ];
 
 const LEGION_MORALE_OPTIONS = [
-  'ON SUICIDE WATCH (BUT STILL TAPPING)',
-  'DEMORALIZED (WHERE LAMBO, SER?)',
-  'MILDLY DISGRUNTLED (NGMI VIBES)',
-  'CAUTIOUSLY OPTIMISTIC (WAGMI...?)',
-  'INSPIRED (DIAMOND HANDS FORMING)',
-  'JUBILANT (FEELS GOOD MAN)',
-  'FANATICALLY LOYAL (FOR THE CHODE!)',
-  'ONE WITH THE GIRTH (ASCENDED & ENGORGED)'
+  'SUICIDE_WATCH',
+  'DEMORALIZED',
+  'DISGRUNTLED',
+  'CAUTIOUS',
+  'INSPIRED',
+  'JUBILANT',
+  'FANATICAL',
+  'ASCENDED'
 ];
 
 const STABILITY_OPTIONS = [
-  'RADIANT (DIVINE CLARITY)',
-  'PRISTINE (ALL SYSTEMS GIRTHY)',
-  'FLICKERING WEAKLY (NEEDS MORE $GIRTH)',
-  'UNSTABLE (DATA STREAMS FRAYING)',
-  'CRITICAL_CORRUPTION (CODE BLEED IMMINENT!)',
-  'DATA_DAEMON_POSSESSION (THE ORACLE IS NOT ITSELF!)'
+  'RADIANT_CLARITY',
+  'PRISTINE',
+  'FLICKERING',
+  'UNSTABLE',
+  'CRITICAL_CORRUPTION',
+  'DATA_DAEMON_POSSESSION'
 ];
 
 export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
@@ -143,25 +143,25 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
         <div className="preset-buttons">
           <button onClick={() => {
             onGirthChange(10);
-            handleTapSurgeChange('FLACCID DRIZZLE');
-            handleMoraleChange('ON SUICIDE WATCH (BUT STILL TAPPING)');
-            handleStabilityChange('CRITICAL_CORRUPTION (CODE BLEED IMMINENT!)');
+            handleTapSurgeChange('FLACCID_DRIZZLE');
+            handleMoraleChange('SUICIDE_WATCH');
+            handleStabilityChange('CRITICAL_CORRUPTION');
           }}>
             BEAR MARKET PANIC
           </button>
           <button onClick={() => {
             onGirthChange(50);
-            handleTapSurgeChange('STEADY POUNDING');
-            handleMoraleChange('CAUTIOUSLY OPTIMISTIC (WAGMI...?)');
-            handleStabilityChange('PRISTINE (ALL SYSTEMS GIRTHY)');
+            handleTapSurgeChange('STEADY_POUNDING');
+            handleMoraleChange('CAUTIOUS');
+            handleStabilityChange('PRISTINE');
           }}>
             STABLE ACCUMULATION
           </button>
           <button onClick={() => {
             onGirthChange(90);
-            handleTapSurgeChange('ASCENDED TAPPING NIRVANA');
-            handleMoraleChange('ONE WITH THE GIRTH (ASCENDED & ENGORGED)');
-            handleStabilityChange('RADIANT (DIVINE CLARITY)');
+            handleTapSurgeChange('ASCENDED_NIRVANA');
+            handleMoraleChange('ASCENDED');
+            handleStabilityChange('RADIANT_CLARITY');
           }}>
             MAXIMUM ENGORGEMENT
           </button>
