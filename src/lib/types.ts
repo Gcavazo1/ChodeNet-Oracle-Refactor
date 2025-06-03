@@ -15,6 +15,14 @@ export interface GirthIndexValues {
   oracle_stability_status: string;
 }
 
+export type ProphecyCorruptionLevel = 
+  | 'none' 
+  | 'glitched' 
+  | 'cryptic' 
+  | 'hostile_fragment'
+  | 'FORBIDDEN_FRAGMENT'
+  | 'ULTRA_GLITCHED_LORE';
+
 export const TAP_SURGE_STATES = {
   'FLACCID_DRIZZLE': { 
     color: '#4a5568', 
