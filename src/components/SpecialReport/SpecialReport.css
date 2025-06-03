@@ -1,4 +1,3 @@
-/* SpecialReport.css */
 .special-report-modal {
   position: fixed;
   top: 0;
@@ -122,13 +121,18 @@
   border-radius: 4px;
   color: #00f0ff;
   font-size: 0.9rem;
-  cursor: not-allowed;
-  opacity: 0.7;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.audio-control:hover {
+.audio-control:not(:disabled):hover {
   background: rgba(0, 240, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.audio-control.disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .audio-status {
@@ -162,6 +166,19 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
