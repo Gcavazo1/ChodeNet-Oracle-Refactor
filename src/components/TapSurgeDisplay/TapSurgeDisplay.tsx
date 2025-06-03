@@ -7,12 +7,16 @@ interface TapSurgeDisplayProps {
 }
 
 export const TapSurgeDisplay: React.FC<TapSurgeDisplayProps> = ({ value }) => {
+  console.log('[TapSurgeDisplay] State:', value);
+  
   // Default to 'STEADY_POUNDING' if value is invalid
   const safeValue: TapSurgeState = TAP_SURGE_STATES[value] 
     ? value 
     : 'STEADY_POUNDING';
   
   const currentState = TAP_SURGE_STATES[safeValue];
+  console.log('[TapSurgeDisplay] Resolved style:', currentState);
+  
   const allStates = Object.entries(TAP_SURGE_STATES);
   const currentIndex = allStates.findIndex(([key]) => key === safeValue);
   

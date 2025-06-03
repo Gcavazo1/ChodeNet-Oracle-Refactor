@@ -7,12 +7,16 @@ interface LegionMoraleBarProps {
 }
 
 export const LegionMoraleBar: React.FC<LegionMoraleBarProps> = ({ value }) => {
+  console.log('[LegionMoraleBar] State:', value);
+  
   // Default to 'CAUTIOUS' if value is invalid
   const safeValue: LegionMoraleState = LEGION_MORALE_STATES[value] 
     ? value 
     : 'CAUTIOUS';
   
   const currentState = LEGION_MORALE_STATES[safeValue];
+  console.log('[LegionMoraleBar] Resolved style:', currentState);
+  
   const states = Object.entries(LEGION_MORALE_STATES);
   const currentIndex = states.findIndex(([key]) => key === safeValue);
   const progressPercentage = ((currentIndex + 1) / states.length) * 100;
