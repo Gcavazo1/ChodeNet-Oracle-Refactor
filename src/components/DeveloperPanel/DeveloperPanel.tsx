@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { type StabilityStatus } from '../../lib/types';
+import { GhostScript } from '../../lib/ghostScript';
 import './DeveloperPanel.css';
 
 interface DeveloperPanelProps {
@@ -53,6 +54,29 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   onMoraleChange,
   onStabilityChange
 }) => {
+  const [ghostScript] = useState(() => new GhostScript());
+  const [simulationStatus, setSimulationStatus] = useState<string>('');
+  
+  useEffect(() => {
+    let statusInterval: number;
+    
+    if (ghostScript.isSimulationRunning()) {
+      statusInterval = window.setInterval(() => {
+        const remaining = ghostScript.getRemainingTime();
+        if (remaining > 0) {
+          setSimulationStatus(`Ghost Legion Tapping Furiously... (Remaining: ${remaining}s)`);
+        } else {
+          setSimulationStatus('Simulation Complete. Oracle is now Pondering a Special Report...');
+          clearInterval(statusInterval);
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (statusInterval) clearInterval(statusInterval);
+    };
+  }, [ghostScript]);
+
   const handleTapSurgeChange = (value: string) => {
     console.log('[DevPanel] Tap Surge Index changed to:', value);
     onTapSurgeChange(value);
@@ -66,6 +90,12 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   const handleStabilityChange = (value: StabilityStatus) => {
     console.log('[DevPanel] Oracle Stability changed to:', value);
     onStabilityChange(value);
+  };
+
+  const handleGhostLegionClick = () => {
+    if (!ghostScript.isSimulationRunning()) {
+      ghostScript.startSimulation(30);
+    }
   };
 
   return (
@@ -140,6 +170,21 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
           </div>
         </div>
         
+        <div className="simulation-controls">
+          <button 
+            className={`ghost-legion-button ${ghostScript.isSimulationRunning() ? 'running' : ''}`}
+            onClick={handleGhostLegionClick}
+            disabled={ghostScript.isSimulationRunning()}
+          >
+            UNLEASH GHOST LEGION!
+          </button>
+          {simulationStatus && (
+            <div className="simulation-status">
+              {simulationStatus}
+            </div>
+          )}
+        </div>
+
         <div className="preset-buttons">
           <button onClick={() => {
             onGirthChange(10);
