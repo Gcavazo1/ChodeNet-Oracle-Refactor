@@ -147,10 +147,10 @@ export class GhostScript {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('trigger-special-report-generation', {
+      const { error } = await supabase.functions.invoke('generate-special-report', {
         body: {
-          simulation_id: this.sessionId,
-          status: 'completed'
+          trigger_reason: 'Ghost Legion Simulation Cycle Ended',
+          simulation_id: this.sessionId
         }
       });
 
