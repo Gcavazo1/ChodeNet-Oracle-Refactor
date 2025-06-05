@@ -1,0 +1,655 @@
+/* Oracle Metrics System Component Styles */
+.oracle-metrics-system {
+  background: linear-gradient(135deg, 
+    rgba(107, 70, 193, 0.08) 0%, 
+    rgba(236, 72, 153, 0.08) 50%, 
+    rgba(245, 158, 11, 0.08) 100%
+  );
+  border: 1px solid rgba(107, 70, 193, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(107, 70, 193, 0.1);
+  transition: all 0.3s ease;
+}
+
+.oracle-metrics-system:hover {
+  border-color: rgba(107, 70, 193, 0.4);
+  box-shadow: 0 8px 32px rgba(107, 70, 193, 0.15);
+}
+
+/* Metrics Header */
+.metrics-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metrics-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #F9FAFB;
+  background: linear-gradient(135deg, var(--oracle-primary), var(--oracle-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin: 0;
+}
+
+/* Category Tabs */
+.category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(107, 70, 193, 0.15);
+}
+
+.category-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(75, 85, 99, 0.3);
+  border: 1px solid rgba(107, 70, 193, 0.2);
+  border-radius: 0.5rem;
+  color: #D1D5DB;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.category-tab:hover {
+  background: rgba(var(--category-color), 0.15);
+  border-color: var(--category-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--category-color), 0.2);
+}
+
+.category-tab.active {
+  background: rgba(var(--category-color), 0.2);
+  border-color: var(--category-color);
+  color: #F9FAFB;
+  box-shadow: 0 4px 16px rgba(var(--category-color), 0.3);
+}
+
+.tab-icon {
+  font-size: 1.125rem;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.tab-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Metric Cards */
+.metric-card {
+  background: linear-gradient(135deg, 
+    rgba(31, 41, 55, 0.8) 0%, 
+    rgba(17, 24, 39, 0.8) 100%
+  );
+  border: 1px solid rgba(107, 70, 193, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--oracle-primary), var(--oracle-secondary));
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.metric-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(31, 41, 55, 0.9) 0%, 
+    rgba(17, 24, 39, 0.9) 100%
+  );
+  border-color: var(--oracle-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(107, 70, 193, 0.2);
+}
+
+.metric-card:hover::before {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--oracle-primary);
+}
+
+/* Status-based styling */
+.metric-card.status-excellent {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.metric-card.status-excellent::before {
+  background: var(--status-live);
+}
+
+.metric-card.status-good {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.metric-card.status-good::before {
+  background: var(--oracle-accent);
+}
+
+.metric-card.status-warning {
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.metric-card.status-warning::before {
+  background: #FB923C;
+}
+
+.metric-card.status-critical {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.metric-card.status-critical::before {
+  background: var(--status-danger);
+}
+
+/* Metric Card Content */
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.metric-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #F9FAFB;
+  margin: 0;
+}
+
+.trend-indicator {
+  font-size: 1.125rem;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.metric-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.value-number {
+  font-family: 'Orbitron', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--oracle-primary);
+  text-shadow: 0 0 8px currentColor;
+}
+
+.value-change {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.value-change.positive {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--status-live);
+}
+
+.value-change.negative {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--status-danger);
+}
+
+.value-change.neutral {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9CA3AF;
+}
+
+.metric-description {
+  font-size: 0.875rem;
+  color: #D1D5DB;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+
+.metric-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+}
+
+.last-updated {
+  font-family: 'Fira Code', monospace;
+}
+
+.click-hint {
+  font-style: italic;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.metric-card:hover .click-hint {
+  opacity: 1;
+  color: var(--oracle-accent);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-fade-in 0.3s ease;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, 
+    rgba(17, 24, 39, 0.95) 0%, 
+    rgba(31, 41, 55, 0.95) 100%
+  );
+  border: 1px solid var(--oracle-primary);
+  border-radius: 1rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-slide-in 0.3s ease;
+  box-shadow: 0 20px 60px rgba(107, 70, 193, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(107, 70, 193, 0.3);
+}
+
+.modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #F9FAFB;
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.5rem;
+  color: var(--status-danger);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: var(--status-danger);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+/* Modal Content Sections */
+.metric-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(107, 70, 193, 0.1);
+  border: 1px solid rgba(107, 70, 193, 0.2);
+  border-radius: 0.5rem;
+}
+
+.overview-stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  display: block;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  color: var(--oracle-primary);
+  font-size: 1.125rem;
+}
+
+.stat-value.large {
+  font-size: 1.5rem;
+  text-shadow: 0 0 8px currentColor;
+}
+
+.stat-value.positive {
+  color: var(--status-live);
+}
+
+.stat-value.negative {
+  color: var(--status-danger);
+}
+
+.stat-value.neutral {
+  color: #9CA3AF;
+}
+
+.metric-description-full {
+  margin-bottom: 2rem;
+}
+
+.metric-description-full h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  color: #F9FAFB;
+  margin-bottom: 0.75rem;
+}
+
+.metric-description-full p {
+  color: #D1D5DB;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Breakdown Section */
+.metric-breakdown {
+  margin-bottom: 2rem;
+}
+
+.metric-breakdown h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  color: #F9FAFB;
+  margin-bottom: 1rem;
+}
+
+.breakdown-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.breakdown-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(107, 70, 193, 0.2);
+  border-radius: 0.5rem;
+}
+
+.breakdown-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.breakdown-label {
+  font-size: 0.875rem;
+  color: #E5E7EB;
+}
+
+.breakdown-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--oracle-accent);
+}
+
+.breakdown-bar {
+  width: 100px;
+  height: 8px;
+  background: rgba(107, 114, 128, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.breakdown-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--oracle-primary), var(--oracle-secondary));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.breakdown-percentage {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Status Section */
+.metric-status h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  color: #F9FAFB;
+  margin-bottom: 1rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid;
+}
+
+.status-indicator.status-excellent {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--status-live);
+}
+
+.status-indicator.status-good {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--oracle-accent);
+}
+
+.status-indicator.status-warning {
+  background: rgba(251, 146, 60, 0.1);
+  border-color: #FB923C;
+}
+
+.status-indicator.status-critical {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--status-danger);
+}
+
+.status-icon {
+  font-size: 1.25rem;
+}
+
+.status-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: #E5E7EB;
+}
+
+/* Animations */
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-slide-in {
+  from { 
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  
+  .category-tabs {
+    justify-content: center;
+  }
+  
+  .value-number {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .oracle-metrics-system {
+    padding: 1rem;
+  }
+  
+  .metrics-header {
+    gap: 1rem;
+  }
+  
+  .metrics-title {
+    font-size: 1.25rem;
+  }
+  
+  .category-tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .category-tab {
+    padding: 0.625rem 0.875rem;
+  }
+  
+  .tab-label {
+    font-size: 0.8125rem;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .metric-card {
+    padding: 1.25rem;
+  }
+  
+  .value-number {
+    font-size: 1.5rem;
+  }
+  
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .metric-overview {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .breakdown-item {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  
+  .breakdown-bar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .oracle-metrics-system {
+    padding: 0.75rem;
+  }
+  
+  .category-tab {
+    padding: 0.5rem 0.75rem;
+    min-width: auto;
+  }
+  
+  .tab-icon {
+    font-size: 1rem;
+  }
+  
+  .tab-label {
+    font-size: 0.75rem;
+  }
+  
+  .metric-card {
+    padding: 1rem;
+  }
+  
+  .metric-name {
+    font-size: 0.875rem;
+  }
+  
+  .value-number {
+    font-size: 1.25rem;
+  }
+  
+  .modal-header {
+    padding: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  .modal-title {
+    font-size: 1.125rem;
+  }
+} 

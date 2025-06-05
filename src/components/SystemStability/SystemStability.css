@@ -1,0 +1,164 @@
+.stability-container {
+  width: 100%;
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.stability-indicator {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stability-bar {
+  width: 30px;
+  height: 150px;
+  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stability-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.warning-icon {
+  animation: warning-flash 1s infinite;
+}
+
+.stability-description {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* Animation states */
+.stability-radiant .stability-bar {
+  animation: crystal-glow 3s infinite;
+  background: linear-gradient(to bottom, #ffffff, #e2e8f0);
+}
+
+.stability-pristine .stability-bar {
+  animation: stable-pulse 4s infinite;
+  background: #4299e1;
+}
+
+.stability-flickering .stability-bar {
+  animation: weak-flicker 1s infinite;
+  background: #ecc94b;
+}
+
+.stability-unstable .stability-bar {
+  animation: scanline-effect 2s infinite;
+  background: #ed8936;
+}
+
+.stability-critical .stability-bar {
+  animation: critical-glitch 0.3s infinite;
+  background: #e53e3e;
+}
+
+.stability-possessed .stability-bar {
+  animation: daemon-possession 0.1s infinite;
+  background: #000000;
+}
+
+@keyframes crystal-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px #ffffff,
+      0 0 40px #ffffff,
+      0 0 60px #ffffff;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 
+      0 0 30px #ffffff,
+      0 0 60px #ffffff,
+      0 0 90px #ffffff;
+    opacity: 0.8;
+  }
+}
+
+@keyframes stable-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px #4299e1;
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 10px #4299e1;
+  }
+}
+
+@keyframes weak-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes scanline-effect {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 150px;
+  }
+}
+
+@keyframes critical-glitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-2px, 2px);
+  }
+  75% {
+    transform: translate(2px, -2px);
+  }
+}
+
+@keyframes daemon-possession {
+  0%, 100% {
+    transform: translate(0);
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    transform: translate(-3px, 3px);
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    transform: translate(3px, -3px);
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    transform: translate(-3px, -3px);
+    filter: hue-rotate(270deg);
+  }
+}
+
+@keyframes warning-flash {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+}

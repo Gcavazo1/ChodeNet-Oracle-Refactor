@@ -1,0 +1,312 @@
+/* Oracle Header Component Styles */
+.oracle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  border-bottom: 2px solid var(--oracle-primary);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 4rem;
+  box-shadow: 0 4px 20px rgba(107, 70, 193, 0.3);
+}
+
+/* Brand Section */
+.brand-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.oracle-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.oracle-logo:hover {
+  transform: scale(1.05);
+}
+
+.cosmic-glyph {
+  font-size: 2rem;
+  animation: cosmic-pulse 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px var(--oracle-primary));
+}
+
+.brand-text-container {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--oracle-primary), var(--oracle-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.1em;
+}
+
+.brand-subtitle {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  color: var(--oracle-accent);
+  letter-spacing: 0.2em;
+  margin-top: -0.125rem;
+}
+
+/* Navigation */
+.main-navigation {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  max-width: 600px;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(107, 70, 193, 0.1);
+  border: 1px solid rgba(107, 70, 193, 0.3);
+  border-radius: 0.5rem;
+  color: #E5E7EB;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(107, 70, 193, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.nav-tab:hover::before {
+  left: 100%;
+}
+
+.nav-tab:hover {
+  background: rgba(107, 70, 193, 0.2);
+  border-color: var(--oracle-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.4);
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, var(--oracle-primary), var(--oracle-secondary));
+  border-color: var(--oracle-accent);
+  color: white;
+  box-shadow: 0 4px 16px rgba(107, 70, 193, 0.6);
+}
+
+.nav-tab.active::before {
+  display: none;
+}
+
+.nav-icon {
+  font-size: 1.125rem;
+}
+
+.nav-label {
+  font-weight: 600;
+}
+
+/* Oracle Status */
+.oracle-status {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 0 1rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 2rem;
+  border: 1px solid;
+  transition: all 0.3s ease;
+}
+
+.status-indicator.status-live {
+  border-color: var(--status-live);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.status-indicator.status-glitching {
+  border-color: var(--status-warning);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+  animation: corruption-glitch 2s ease-in-out infinite;
+}
+
+.status-indicator.status-dormant {
+  border-color: var(--status-danger);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-live .status-dot {
+  background: var(--status-live);
+}
+
+.status-glitching .status-dot {
+  background: var(--status-warning);
+}
+
+.status-dormant .status-dot {
+  background: var(--status-danger);
+}
+
+.status-text {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #E5E7EB;
+}
+
+.status-icon {
+  font-size: 0.75rem;
+}
+
+/* User Section */
+.user-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes cosmic-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px var(--oracle-primary));
+  }
+  50% { 
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 16px var(--oracle-primary)) drop-shadow(0 0 24px var(--oracle-secondary));
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes corruption-glitch {
+  0%, 90%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-1px); }
+  20% { transform: translateX(1px); }
+  30% { transform: translateX(-1px); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .oracle-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  .nav-tab {
+    padding: 0.5rem 1rem;
+  }
+  
+  .nav-label {
+    display: none;
+  }
+  
+  .nav-icon {
+    font-size: 1.25rem;
+  }
+  
+  .brand-text {
+    font-size: 1rem;
+  }
+  
+  .brand-subtitle {
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .oracle-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  
+  .main-navigation {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+  
+  .oracle-status {
+    margin: 0;
+  }
+  
+  .nav-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem;
+    min-width: 0;
+  }
+  
+  .cosmic-glyph {
+    font-size: 1.5rem;
+  }
+  
+  .status-indicator {
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .status-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-text-container {
+    display: none;
+  }
+  
+  .cosmic-glyph {
+    font-size: 1.75rem;
+  }
+  
+  .oracle-status {
+    display: none;
+  }
+} 

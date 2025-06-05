@@ -1,0 +1,138 @@
+.ritual-requests {
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: rgba(20, 20, 30, 0.95);
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 
+    0 0 20px rgba(0, 240, 255, 0.2),
+    inset 0 0 15px rgba(0, 240, 255, 0.1);
+}
+
+.ritual-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.ritual-header h2 {
+  color: #00f0ff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-shadow: 
+    0 0 10px rgba(0, 240, 255, 0.5),
+    0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.ritual-icon {
+  color: #00f0ff;
+  opacity: 0.8;
+}
+
+.ritual-topics {
+  display: grid;
+  gap: 1rem;
+}
+
+.ritual-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 1rem;
+  background: rgba(30, 30, 40, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ritual-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 65%,
+    rgba(0, 240, 255, 0.1) 70%,
+    transparent 75%
+  );
+  background-size: 200% 200%;
+  animation: button-shine 6s linear infinite;
+}
+
+.ritual-button.active {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+  box-shadow: 
+    0 0 15px rgba(0, 240, 255, 0.3),
+    inset 0 0 10px rgba(0, 240, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.ritual-button:hover:not(.active) {
+  background: rgba(30, 30, 40, 0.9);
+  border-color: rgba(0, 240, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.button-icon {
+  color: #00f0ff;
+  opacity: 0.8;
+}
+
+.current-topic {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(20, 20, 30, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.topic-text {
+  display: block;
+  margin-top: 0.5rem;
+  color: #00f0ff;
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+@keyframes button-shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .ritual-requests {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .ritual-button {
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+}

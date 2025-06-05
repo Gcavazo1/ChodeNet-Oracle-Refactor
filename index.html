@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🔮 CHODE-NET ORACLE | The AI Game Manager</title>
+    <meta name="description" content="The AI-powered community content platform that keeps decentralized games alive forever.">
+    
+    <!-- Oracle Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;600&family=Fira+Code:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Oracle Design System -->
+    <style>
+      :root {
+        /* Primary Oracle Colors */
+        --oracle-primary: #6B46C1;    /* Deep purple */
+        --oracle-secondary: #EC4899;  /* Hot pink */
+        --oracle-accent: #F59E0B;     /* Gold */
+        
+        /* Status Colors */
+        --status-live: #10B981;       /* Green */
+        --status-warning: #F59E0B;    /* Amber */
+        --status-danger: #EF4444;     /* Red */
+        
+        /* Corruption Levels */
+        --pure: #E0E7FF;              /* Light purple */
+        --chaotic: #A855F7;           /* Medium purple */
+        --corrupted: #7C2D12;         /* Dark red */
+        
+        /* Background & Surface */
+        --bg-primary: #0F0F23;        /* Deep space */
+        --bg-secondary: #1E1B4B;      /* Dark purple */
+        --surface: #312E81;           /* Medium purple */
+      }
+      
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        color: #E5E7EB;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: var(--bg-primary);
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: var(--oracle-primary);
+        border-radius: 4px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--oracle-secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
