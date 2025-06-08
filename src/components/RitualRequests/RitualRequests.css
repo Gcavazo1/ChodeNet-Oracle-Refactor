@@ -1,7 +1,7 @@
 .ritual-requests {
   width: 100%;
-  max-width: 800px;
-  margin: 2rem auto;
+  max-width: 600px;
+  margin: 0 auto;
   padding: 1.5rem;
   background: rgba(20, 20, 30, 0.95);
   border: 2px solid rgba(0, 240, 255, 0.3);
@@ -37,22 +37,23 @@
 }
 
 .ritual-topics {
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .ritual-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.8rem;
-  width: 100%;
-  padding: 1rem;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
   background: rgba(30, 30, 40, 0.8);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 1.1rem;
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  border-radius: 6px;
+  color: #00f0ff;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -63,66 +64,101 @@
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(
-    45deg,
-    transparent 65%,
-    rgba(0, 240, 255, 0.1) 70%,
-    transparent 75%
+    90deg,
+    transparent,
+    rgba(0, 240, 255, 0.2),
+    transparent
   );
-  background-size: 200% 200%;
-  animation: button-shine 6s linear infinite;
+  transition: left 0.5s ease;
+}
+
+.ritual-button:hover::before {
+  left: 100%;
 }
 
 .ritual-button.active {
   background: rgba(0, 240, 255, 0.2);
-  border-color: #00f0ff;
+  border-color: rgba(0, 240, 255, 0.6);
   box-shadow: 
-    0 0 15px rgba(0, 240, 255, 0.3),
+    0 0 15px rgba(0, 240, 255, 0.4),
     inset 0 0 10px rgba(0, 240, 255, 0.2);
-  transform: translateY(-1px);
 }
 
 .ritual-button:hover:not(.active) {
-  background: rgba(30, 30, 40, 0.9);
   border-color: rgba(0, 240, 255, 0.5);
-  transform: translateY(-1px);
+  background: rgba(0, 240, 255, 0.1);
 }
 
 .button-icon {
-  color: #00f0ff;
   opacity: 0.8;
 }
 
 .current-topic {
   margin-top: 1.5rem;
   padding: 1rem;
-  background: rgba(20, 20, 30, 0.8);
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  border-radius: 4px;
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 6px;
   text-align: center;
-  font-size: 0.9rem;
+}
+
+.current-topic span:first-child {
+  display: block;
   color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .topic-text {
-  display: block;
-  margin-top: 0.5rem;
   color: #00f0ff;
-  font-weight: bold;
-  font-size: 1.1rem;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  font-weight: 600;
+  font-size: 1rem;
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
+}
+
+.topic-description {
+  margin-top: 0.5rem;
+  color: #aaa;
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.ritual-guidance {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(138, 43, 226, 0.1);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.ritual-guidance p {
+  color: #C4B5FD;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ritual-guidance p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.ritual-guidance p:last-child {
+  opacity: 0.8;
+  font-size: 0.85rem;
 }
 
 @keyframes button-shine {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
 @media (max-width: 768px) {
@@ -132,7 +168,23 @@
   }
 
   .ritual-button {
-    font-size: 1rem;
-    padding: 0.8rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .ritual-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .topic-text {
+    font-size: 0.9rem;
+  }
+
+  .ritual-guidance {
+    padding: 0.75rem;
+  }
+
+  .ritual-guidance p {
+    font-size: 0.8rem;
   }
 }

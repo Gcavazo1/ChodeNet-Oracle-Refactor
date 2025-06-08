@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OracleHeader } from '../OracleHeader/OracleHeader';
 import { SmartAlertsBar, Alert } from '../SmartAlertsBar/SmartAlertsBar';
 import { CollapsibleGameContainer, GameState, GameMessage } from '../CollapsibleGameContainer/CollapsibleGameContainer';
-import { OracleMetricsSystem, MetricData } from '../OracleMetricsSystem/OracleMetricsSystem';
 import { CommunityGirthTracker } from '../CommunityMetrics/CommunityGirthTracker';
 import { CommunityPollingSystem } from '../CommunityPolling/CommunityPollingSystem';
 import { ProphecyChamber } from '../ProphecyChamber/ProphecyChamber';
 import { RitualRequests } from '../RitualRequests/RitualRequests';
 import { ApocryphalScrolls } from '../ApocryphalScrolls/ApocryphalScrolls';
-import { realTimeOracle, RealTimeGameEvent, OracleResponse } from '../../lib/realTimeOracleEngine';
+import { CommunityLoreInput } from '../CommunityLoreInput/CommunityLoreInput';
+import { LoreArchive } from '../LoreArchive/LoreArchive';
+import { realTimeOracle, OracleResponse, RealTimeGameEvent } from '../../lib/realTimeOracleEngine';
 import { useGirthIndexStore } from '../../lib/girthIndexStore';
-import './NewDashboard.css';
-import { supabase } from '../../lib/supabase';
+import { useOracleFlowStore } from '../../lib/oracleFlowStore';
 import { oracleBackend } from '../../lib/oracleBackendIntegration';
-import { DeveloperPanel } from '../DeveloperPanel/DeveloperPanel';
+import './NewDashboard.css';
 
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface NewDashboardProps {
   // Future props for game integration, wallet state, etc.
 }
@@ -35,12 +37,11 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     personalityDistribution: {} as Record<string, number>,
     totalEvents: 0
   });
-  const [currentRitualTopic, setCurrentRitualTopic] = useState<string | null>(null);
   const [judgesPanelVisible, setJudgesPanelVisible] = useState(false);
-  const [prophecyActiveTab, setProphecyActiveTab] = useState<'ritual' | 'chamber' | 'scrolls'>('ritual');
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
-  const [metricInfluences, setMetricInfluences] = useState<any>(null);
+  const [metricInfluences, setMetricInfluences] = useState<Record<string, unknown> | null>(null);
   const [loadingInfluences, setLoadingInfluences] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(true);
 
   // === CORE GIRTH INDEX METRICS ===
   const {
@@ -52,18 +53,19 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     updateMetrics
   } = useGirthIndexStore();
 
-  // Create girthIndex object for compatibility with existing code
-  const girthIndex = {
-    divineResonance: girthResonance,
-    tapSurgeIndex,
-    legionMorale,
-    oracleStability: stabilityStatus
-  };
+  // === ORACLE FLOW STORE ===
+  const {
+    activeTab,
+    switchToTab,
+    setupRealtimeSubscription: setupOracleFlowSubscription
+  } = useOracleFlowStore();
 
   // === REAL-TIME ORACLE INTEGRATION ===
   
   useEffect(() => {
     console.log('🔮 Setting up Real-Time Oracle Engine...');
+    
+    let cleanupFunctions: (() => void)[] = [];
     
     // Set up Oracle response listener
     const handleOracleResponse = (response: OracleResponse) => {
@@ -92,7 +94,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     };
     
     // Set up game message callback for bi-directional communication
-    const sendMessageToGame = (message: any) => {
+    const sendMessageToGame = (message: Record<string, unknown>) => {
       // This will be called by the Oracle engine to send responses back to the game
       console.log('🔮 Oracle sending message to game:', message);
       
@@ -100,7 +102,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
       const gameContainer = document.querySelector('iframe[title="$CHODE Tapper Game"]') as HTMLIFrameElement;
       if (gameContainer?.contentWindow) {
         try {
-          (gameContainer.contentWindow as any).chodeNetGodotCallbacks?.godotReceiveMessageFromParent?.(
+          (gameContainer.contentWindow as Window & { chodeNetGodotCallbacks?: { godotReceiveMessageFromParent?: (msg: string) => void } }).chodeNetGodotCallbacks?.godotReceiveMessageFromParent?.(
             JSON.stringify(message)
           );
         } catch (error) {
@@ -113,14 +115,36 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     realTimeOracle.onOracleResponse(handleOracleResponse);
     realTimeOracle.setGameMessageCallback(sendMessageToGame);
     
-    // Setup Girth Index subscription
-    setupGirthSubscription();
-    
-    // Cleanup
-    return () => {
-      realTimeOracle.offOracleResponse(handleOracleResponse);
+    const initSubscriptions = async () => {
+      try {
+        console.log('🔮 Initializing subscriptions...');
+        const unsubscribeGirth = await setupGirthSubscription();
+        const unsubscribeOracleFlow = setupOracleFlowSubscription();
+        
+        cleanupFunctions.push(unsubscribeGirth, unsubscribeOracleFlow);
+        console.log('🔮 Subscriptions initialized successfully');
+      } catch (error) {
+        console.error('🔮 Error initializing subscriptions:', error);
+      }
     };
-  }, [setupGirthSubscription]);
+
+    initSubscriptions();
+    
+    // Cleanup function
+    return () => {
+      console.log('🔮 Cleaning up Real-Time Oracle Engine subscriptions...');
+      realTimeOracle.offOracleResponse(handleOracleResponse);
+      
+      cleanupFunctions.forEach((cleanup) => {
+        try {
+          cleanup();
+        } catch (error) {
+          console.error('🔮 Error during cleanup:', error);
+        }
+      });
+      cleanupFunctions = [];
+    };
+  }, []); // Empty dependency array to ensure this only runs once
 
   // Helper functions for Oracle integration
   const getOracleIcon = (style?: string): string => {
@@ -384,27 +408,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     console.log('🔮 Oracle Section Changed:', section);
   };
 
-  const handleWalletConnectionChange = (connected: boolean, address?: string) => {
-    setWalletConnected(connected);
-    setWalletAddress(address || null);
-    console.log('💰 Wallet Connection:', { connected, address });
-    
-    // Add wallet connection alert
-    if (connected && address) {
-      const newAlert: Alert = {
-        id: `wallet-${Date.now()}`,
-        type: 'system',
-        title: 'Wallet Connected',
-        message: `Oracle recognizes your digital essence: ${address.slice(0, 8)}...`,
-        icon: '🔗',
-        priority: 'medium',
-        timestamp: new Date(),
-        dismissible: true,
-        autoHide: false
-      };
-      setAlerts(prev => [newAlert, ...prev]);
-    }
-  };
+  // Removed unused handleWalletConnectionChange function
 
   const handleGameStateChange = (state: GameState) => {
     setGameState(state);
@@ -597,48 +601,57 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
                   <h3>⚡ Oracle Prophecy System</h3>
                   <div className="prophecy-tabs">
                     <button 
-                      className={`tab ${prophecyActiveTab === 'ritual' ? 'active' : ''}`}
-                      onClick={() => setProphecyActiveTab('ritual')}
+                      className={`tab ${activeTab === 'ritual' ? 'active' : ''}`}
+                      onClick={() => switchToTab('ritual')}
                     >
                       🎯 Ritual Requests
                     </button>
                     <button 
-                      className={`tab ${prophecyActiveTab === 'chamber' ? 'active' : ''}`}
-                      onClick={() => setProphecyActiveTab('chamber')}
+                      className={`tab ${activeTab === 'chamber' ? 'active' : ''}`}
+                      onClick={() => switchToTab('chamber')}
                     >
                       🔮 Prophecy Chamber
                     </button>
                     <button 
-                      className={`tab ${prophecyActiveTab === 'scrolls' ? 'active' : ''}`}
-                      onClick={() => setProphecyActiveTab('scrolls')}
+                      className={`tab ${activeTab === 'scrolls' ? 'active' : ''}`}
+                      onClick={() => switchToTab('scrolls')}
                     >
                       📜 Scrolls Feed
+                    </button>
+                    <button 
+                      className={`tab ${activeTab === 'lore' ? 'active' : ''}`}
+                      onClick={() => switchToTab('lore')}
+                    >
+                      📝 Lore Input
+                    </button>
+                    <button 
+                      className={`tab ${activeTab === 'archive' ? 'active' : ''}`}
+                      onClick={() => switchToTab('archive')}
+                    >
+                      📚 Lore Archive
                     </button>
                   </div>
                 </div>
                 
                 <div className="prophecy-content">
-                  {prophecyActiveTab === 'ritual' && (
-                    <RitualRequests 
-                      onTopicSelect={(topic) => {
-                        setCurrentRitualTopic(topic);
-                        setProphecyActiveTab('chamber');
-                      }}
-                    />
+                  {activeTab === 'ritual' && (
+                    <RitualRequests />
                   )}
                   
-                  {prophecyActiveTab === 'chamber' && (
-                    <ProphecyChamber 
-                      currentTopic={currentRitualTopic}
-                      onProphecyReceived={() => {
-                        console.log('🔮 Prophecy received, switching to scrolls');
-                        setProphecyActiveTab('scrolls');
-                      }}
-                    />
+                  {activeTab === 'chamber' && (
+                    <ProphecyChamber />
                   )}
                   
-                  {prophecyActiveTab === 'scrolls' && (
+                  {activeTab === 'scrolls' && (
                     <ApocryphalScrolls />
+                  )}
+                  
+                  {activeTab === 'lore' && (
+                    <CommunityLoreInput />
+                  )}
+                  
+                  {activeTab === 'archive' && (
+                    <LoreArchive />
                   )}
                 </div>
               </div>
@@ -827,11 +840,22 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
       </main>
       
       {/* Debug Info - Updated */}
-      <div className="debug-info">
-        <div className="debug-item">
-          <span className="debug-label">Current Section:</span>
-          <span className="debug-value">{currentSection}</span>
-        </div>
+      {showDebugPanel && (
+        <div className="debug-info">
+          <div className="debug-header">
+            <span className="debug-title">Debug Information</span>
+            <button 
+              className="debug-dismiss"
+              onClick={() => setShowDebugPanel(false)}
+              title="Hide debug panel"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="debug-item">
+            <span className="debug-label">Current Section:</span>
+            <span className="debug-value">{currentSection}</span>
+          </div>
         <div className="debug-item">
           <span className="debug-label">Wallet Status:</span>
           <span className="debug-value">
@@ -868,7 +892,8 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
           <span className="debug-label">Oracle Events:</span>
           <span className="debug-value">{oracleStats.totalEvents} processed</span>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }; 

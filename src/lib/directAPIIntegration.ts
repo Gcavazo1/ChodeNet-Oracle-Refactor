@@ -24,7 +24,7 @@ interface GeneratedProphecyAsset {
   };
 }
 
-type ImageProvider = 'kie_ai' | 'dalle' | 'midjourney';
+type ImageProvider = 'kie_ai' | 'dalle' | 'midjourney' | 'local_sd';
 
 /**
  * 🎨 PROPHECY VISUAL POST-PROCESSING PIPELINE
@@ -51,16 +51,14 @@ interface VisualPromptComponents {
 
 export class ProphecyVisualProcessor {
   private generateImageMethod: (prompt: string, style: string) => Promise<string>;
-  private imageProvider: string;
   
-  constructor(generateImageMethod: (prompt: string, style: string) => Promise<string>, imageProvider: string) {
+  constructor(generateImageMethod: (prompt: string, style: string) => Promise<string>) {
     this.generateImageMethod = generateImageMethod;
-    this.imageProvider = imageProvider;
   }
   
   // === THEME EXTRACTION MAPPINGS ===
   
-  private themeKeywords = {
+  private themeKeywords: Record<string, string[]> = {
     // Power & Ascension
     power: ['power', 'ascend', 'transcend', 'evolve', 'grow', 'expand', 'mighty', 'strength'],
     girth: ['girth', 'size', 'expansion', 'swelling', 'enlargement', 'magnitude'],
@@ -82,7 +80,7 @@ export class ProphecyVisualProcessor {
     realm: ['realm', 'dimension', 'world', 'universe', 'plane', 'domain']
   };
 
-  private corruptionVisualMods = {
+  private corruptionVisualMods: Record<string, {colors: string[], effects: string[], atmosphere: string}> = {
     pristine: {
       colors: ['cyan', 'blue', 'white', 'silver'],
       effects: ['clean lines', 'smooth gradients', 'pristine pixels'],
@@ -130,7 +128,7 @@ export class ProphecyVisualProcessor {
     const styledElements = this.applyCorruptionStyling(visualElements, corruptionLevel);
     
     // Step 4: Construct final prompt components
-    const promptComponents = this.buildPromptComponents(styledElements, analysis);
+    const promptComponents = this.buildPromptComponents(styledElements);
     
     console.log('🎨 Generated visual components:', promptComponents);
     return promptComponents;
@@ -138,10 +136,9 @@ export class ProphecyVisualProcessor {
 
   private analyzeTextContent(text: string, corruptionLevel: string): ProphecyAnalysis {
     const lowerText = text.toLowerCase();
-    const words = lowerText.split(/\s+/);
     
     // Extract themes based on keyword matching
-    const themes = [];
+    const themes: string[] = [];
     for (const [theme, keywords] of Object.entries(this.themeKeywords)) {
       if (keywords.some(keyword => lowerText.includes(keyword))) {
         themes.push(theme);
@@ -169,13 +166,13 @@ export class ProphecyVisualProcessor {
   }
 
   private calculateCorruptionInfluence(level: string, themes: string[]): number {
-    const baseCorruption = {
+    const baseCorruption: Record<string, number> = {
       pristine: 0,
       cryptic: 25,
       flickering: 50,
       glitched_ominous: 75,
       forbidden_fragment: 100
-    }[level] || 0;
+    };
     
     // Adjust based on themes
     let adjustment = 0;
@@ -183,14 +180,14 @@ export class ProphecyVisualProcessor {
     if (themes.includes('forbidden')) adjustment += 15;
     if (themes.includes('power')) adjustment += 5;
     
-    return Math.min(100, baseCorruption + adjustment);
+    return Math.min(100, (baseCorruption[level] || 0) + adjustment);
   }
 
   private extractVisualElements(analysis: ProphecyAnalysis): string[] {
-    const elements = [];
+    const elements: string[] = [];
     
     // Map themes to visual elements
-    const themeVisuals = {
+    const themeVisuals: Record<string, string[]> = {
       power: ['energy aura', 'glowing core', 'power emanation'],
       girth: ['expanding form', 'growing essence', 'size manifestation'],
       tapping: ['rhythmic patterns', 'pulse waves', 'beat visualization'],
@@ -206,8 +203,9 @@ export class ProphecyVisualProcessor {
     };
     
     analysis.primary_themes.forEach(theme => {
-      if (themeVisuals[theme]) {
-        elements.push(...themeVisuals[theme]);
+      const visualsForTheme = themeVisuals[theme];
+      if (visualsForTheme) {
+        elements.push(...visualsForTheme);
       }
     });
     
@@ -228,7 +226,7 @@ export class ProphecyVisualProcessor {
   }
 
   private generateBaseScene(corruptionLevel: string): string {
-    const baseScenes = {
+    const baseScenes: Record<string, string> = {
       pristine: 'serene digital sanctuary with crystalline structures',
       cryptic: 'ancient digital temple with mystical hieroglyphs',
       flickering: 'unstable cyber realm with fluctuating reality',
@@ -246,7 +244,7 @@ export class ProphecyVisualProcessor {
   }
 
   private generateEnvironmentalDetails(corruptionLevel: string): string[] {
-    const environments = {
+    const environments: Record<string, string[]> = {
       pristine: ['floating data cubes', 'clean geometric patterns', 'pristine pixel art'],
       cryptic: ['ancient digital runes', 'mystical code fragments', 'ethereal data streams'],
       flickering: ['unstable pixel formations', 'glitching scan lines', 'fluctuating data'],
@@ -257,7 +255,7 @@ export class ProphecyVisualProcessor {
     return environments[corruptionLevel] || environments.pristine;
   }
 
-  private buildPromptComponents(styled: VisualPromptComponents, analysis: ProphecyAnalysis): VisualPromptComponents {
+  private buildPromptComponents(styled: VisualPromptComponents): VisualPromptComponents {
     // Final assembly with consistent pixel art styling
     const pixelArtBase = 'detailed pixel art, 16-bit style, sharp pixels, retro game aesthetic';
     const cyberpunkCore = 'cyberpunk oracle, futuristic mystical';
@@ -330,7 +328,7 @@ export class ProphecyVisualProcessor {
             corruption_level: this.calculateCorruptionInfluence(corruptionLevel, []),
             generation_timestamp: new Date().toISOString(),
             generation_time: endTime - startTime,
-            image_provider: this.imageProvider,
+            image_provider: 'kie_ai',
             processing_pipeline: 'scroll_visual_processor_v1',
             visual_components: visualComponents
           }
@@ -351,23 +349,29 @@ export class DirectAPIIntegration {
   private dalleApiKey: string;
   private elevenlabsApiKey: string;
   private imageProvider: ImageProvider;
-  private visualProcessor: ProphecyVisualProcessor; // New processor
+  private visualProcessor: ProphecyVisualProcessor;
+  
+  // NEW: Local Stable Diffusion settings
+  private localSDUrl: string;
+  private useLocalSD: boolean;
 
   constructor() {
-    // Direct API keys (much simpler!)
     this.groqApiKey = import.meta.env.VITE_GROQ_API_KEY || '';
     this.kieAiApiKey = import.meta.env.VITE_KIE_AI_API_KEY || '';
     this.dalleApiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
     this.elevenlabsApiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
-    this.imageProvider = (import.meta.env.VITE_IMAGE_GENERATION_PROVIDER as ImageProvider) || 'kie_ai';
     
-    // Initialize the visual processor
-    this.visualProcessor = new ProphecyVisualProcessor(this.generateImage.bind(this), this.imageProvider);
+    // Use the proxy path for local SD
+    this.localSDUrl = '/sdapi'; 
+    this.useLocalSD = import.meta.env.VITE_USE_LOCAL_SD === 'true';
+    
+    this.imageProvider = this.determineImageProvider();
+    this.visualProcessor = new ProphecyVisualProcessor(this.generateImage.bind(this));
   }
 
   // === GROQ AI TEXT GENERATION ===
   
-  async generateWithGroq(messages: any[], maxTokens: number = 200): Promise<string> {
+  async generateWithGroq(messages: {role: string, content: string}[], maxTokens: number = 200): Promise<string> {
     if (!this.groqApiKey) {
       throw new Error('Groq API key not configured');
     }
@@ -401,35 +405,86 @@ export class DirectAPIIntegration {
 
   // === KIE AI IMAGE GENERATION ===
   
-  async generateImageWithKieAI(prompt: string, style: string): Promise<string> {
+  async generateImageWithKieAI(prompt: string, _style: string): Promise<string> {
+    // Style parameter is unused but kept for API consistency
     if (!this.kieAiApiKey) {
-      throw new Error('Kie AI API key not configured');
+      console.error('🎨 Kie AI API key is missing.');
+      throw new Error('Kie AI API key is not configured.');
     }
 
+    const generateUrl = 'https://kieai.erweima.ai/api/v1/gpt4o-image/generate';
+    const recordInfoUrl = 'https://kieai.erweima.ai/api/v1/gpt4o-image/record-info';
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${this.kieAiApiKey}`
+    };
+
+    const generateBody = {
+      prompt: prompt,
+      size: "1:1"
+    };
+
     try {
-      const response = await fetch('https://api.kieai.com/v1/generate', {
+      // Step 1: Start generation and get taskId
+      console.log(`🎨 Sending generation request to Kie AI:`, { url: generateUrl, prompt });
+      const generateResponse = await fetch(generateUrl, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.kieAiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          style,
-          width: 512,
-          height: 512,
-          num_images: 1,
-          guidance_scale: 7.5,
-          num_inference_steps: 20
-        })
+        headers: headers,
+        body: JSON.stringify(generateBody)
       });
 
-      if (!response.ok) {
-        throw new Error(`Kie AI API error: ${response.status}`);
+      if (!generateResponse.ok) {
+        throw new Error(`Kie AI generation request failed: ${generateResponse.status}`);
+      }
+      const generateData = await generateResponse.json();
+      const taskId = generateData.data?.taskId;
+      if (!taskId) {
+        throw new Error('Kie AI did not return a taskId.');
+      }
+      console.log(`🎨 Kie AI task started with taskId: ${taskId}`);
+
+      // Step 2: Poll for the result
+      const maxRetries = 20; // Poll for up to 20 * 3s = 60 seconds
+      const retryDelay = 3000; // 3 seconds
+
+      for (let i = 0; i < maxRetries; i++) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+
+        console.log(`🎨 Polling Kie AI for task ${taskId}, attempt ${i + 1}/${maxRetries}`);
+        const recordInfoResponse = await fetch(`${recordInfoUrl}?taskId=${taskId}`, {
+          method: 'GET',
+          headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${this.kieAiApiKey}`
+          }
+        });
+        
+        if (!recordInfoResponse.ok) {
+            console.warn(`🎨 Polling failed with status ${recordInfoResponse.status}`);
+            continue; // Maybe a transient error, continue polling
+        }
+
+        const recordInfoData = await recordInfoResponse.json();
+        const status = recordInfoData.data?.status;
+
+        if (status === 'SUCCESS') {
+          const imageUrl = recordInfoData.data?.response?.resultUrls?.[0];
+          if (imageUrl) {
+            console.log('🎨 Image generated with Kie AI:', imageUrl);
+            return imageUrl;
+          } else {
+            throw new Error('Kie AI task succeeded but no image URL was found.');
+          }
+        } else if (status === 'GENERATE_FAILED' || status === 'CREATE_TASK_FAILED') {
+          throw new Error(`Kie AI task failed with status: ${status}. Error: ${recordInfoData.data?.errorMessage}`);
+        }
+        // If status is 'GENERATING', the loop will continue
       }
 
-      const data = await response.json();
-      return data.images?.[0]?.url || data.image_url || '';
+      throw new Error('Kie AI task timed out after 60 seconds.');
+
     } catch (error) {
       console.error('🎨 Kie AI API error:', error);
       throw error;
@@ -512,6 +567,12 @@ export class DirectAPIIntegration {
   // === UNIFIED IMAGE GENERATION ===
   
   async generateImage(prompt: string, style: string): Promise<string> {
+    console.log('🎨 Generating image with provider:', this.imageProvider);
+    
+    if (this.useLocalSD) {
+      return await this.generateImageWithLocalSD(prompt, style);
+    }
+    
     switch (this.imageProvider) {
       case 'kie_ai':
         return await this.generateImageWithKieAI(prompt, style);
@@ -550,7 +611,7 @@ export class DirectAPIIntegration {
       let visualThemes: string[] = [];
       try {
         visualThemes = JSON.parse(themesResponse);
-      } catch (e) {
+      } catch (_e) {
         console.warn('🔮 Failed to parse visual themes, using fallback');
         visualThemes = ['cyberpunk', 'mystical', 'oracle', 'corruption'];
       }
@@ -619,7 +680,15 @@ export class DirectAPIIntegration {
 
     // Test Image Provider
     try {
-      if (this.imageProvider === 'kie_ai' && this.kieAiApiKey) {
+      if (this.useLocalSD) {
+        // Test local Stable Diffusion
+        results.imageProvider = await this.testLocalSDConnection();
+        if (results.imageProvider) {
+          console.log('✅ Local Stable Diffusion connected');
+        } else {
+          results.errors.push('Local Stable Diffusion not accessible at ' + this.localSDUrl);
+        }
+      } else if (this.imageProvider === 'kie_ai' && this.kieAiApiKey) {
         // We'll skip actual image generation for connection test
         results.imageProvider = true;
         console.log('✅ Kie AI configured');
@@ -653,9 +722,10 @@ export class DirectAPIIntegration {
   getConnectionStatus(): Record<string, boolean> {
     return {
       groq: !!this.groqApiKey,
-      kie_ai: !!this.kieAiApiKey && this.imageProvider === 'kie_ai',
-      dalle: !!this.dalleApiKey && this.imageProvider === 'dalle',
-      elevenlabs: !!this.elevenlabsApiKey
+      kie_ai: !!this.kieAiApiKey,
+      dalle: !!this.dalleApiKey,
+      elevenlabs: !!this.elevenlabsApiKey,
+      local_sd: this.useLocalSD
     };
   }
 
@@ -679,6 +749,222 @@ export class DirectAPIIntegration {
       corruptionLevel, 
       additionalContext
     );
+  }
+
+  /**
+   * NEW: Generate image using local AUTOMATIC1111 WebUI
+   */
+  async generateImageWithLocalSD(prompt: string, corruptionLevel: string = 'pristine'): Promise<string> {
+    const startTime = performance.now();
+    console.log(`🔮🎨 Generating image with Local SD for corruption: ${corruptionLevel}`);
+    
+    // Use a relative path so the Vite proxy catches it
+    const url = `/sdapi/v1/txt2img`;
+
+    const modelConfig = this.getModelConfigForCorruption(corruptionLevel);
+    const payload = {
+      prompt: `${modelConfig.stylePrefix} ${prompt} ${modelConfig.styleSuffix}`,
+      negative_prompt: modelConfig.negativePrompt,
+      steps: 25,
+      cfg_scale: 7.5,
+      width: 512,
+      height: 512,
+      sampler_name: "DPM++ 2M Karras",
+      seed: -1,
+      override_settings: {
+        sd_model_checkpoint: modelConfig.modelName
+      }
+    };
+
+    console.log('🔮🚀 Sending request to Local SD WebUI...');
+    console.log(`🔮📦 Full Payload:`, JSON.stringify(payload, null, 2));
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+  
+      console.log(`🔮📨 SD WebUI Response Status: ${response.status} ${response.statusText}`);
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔮❌ SD WebUI API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          responseBody: errorText
+        });
+        throw new Error(`Local SD API error: ${response.status} ${response.statusText}`);
+      }
+  
+      console.log('🔮📦 Parsing response JSON...');
+      const result = await response.json();
+      
+      if (!result.images || result.images.length === 0) {
+        console.error('🔮❌ No images in response:', result);
+        throw new Error('No images generated by local Stable Diffusion');
+      }
+  
+      console.log(`🔮🎉 Generated ${result.images.length} image(s) successfully!`);
+      
+      // Convert base64 to blob URL for display
+      console.log('🔮🔄 Converting base64 to blob URL...');
+      const base64Image = result.images[0];
+      console.log(`🔮📏 Base64 length: ${base64Image.length} characters`);
+      
+      const imageBlob = this.base64ToBlob(base64Image, 'image/png');
+      console.log(`🔮💾 Blob size: ${(imageBlob.size / 1024).toFixed(1)} KB`);
+      
+      const imageUrl = URL.createObjectURL(imageBlob);
+  
+      const endTime = performance.now();
+      const generationTime = ((endTime - startTime) / 1000).toFixed(2);
+      
+      console.log(`🔮⏱️ Total Generation Time: ${generationTime}s`);
+      console.log(`🔮🖼️ Image URL Created: ${imageUrl.substring(0, 50)}...`);
+      console.log('🔮🎨 === ORACLE LOCAL SD GENERATION COMPLETE ===');
+  
+      return imageUrl;
+    } catch(err) {
+      const endTime = performance.now();
+      const generationTime = ((endTime - startTime) / 1000).toFixed(2);
+      console.error('🔮💥 === LOCAL SD GENERATION FAILED ===');
+      console.error(`🔮⏱️ Failed after: ${generationTime}s`);
+      console.error('🔮❌ Error Details:', err);
+      console.error('🔮🔧 Troubleshooting Checklist:');
+      console.error('  1. ✅ Check if SD WebUI is running: http://127.0.0.1:7860');
+      console.error('  2. ✅ Verify --api flag in webui-user.bat: --api --listen --port 7860');
+      console.error('  3. ✅ Check Windows Firewall isn\'t blocking port 7860');
+      console.error('  4. ✅ Ensure model files exist in G:\\stable-diffusion-webui-directml\\models\\Stable-diffusion\\');
+      console.error('  5. ✅ Verify Oracle models are properly named and accessible');
+      console.error('🔮💥 === END ERROR REPORT ===');
+      throw err;
+    }
+  }
+
+  /**
+   * Get model configuration based on corruption level
+   */
+  private getModelConfigForCorruption(corruptionLevel: string) {
+    const configs = {
+      pristine: {
+        modelName: 'oracle-pristine.safetensors',
+        stylePrefix: 'mystical oracle vision, divine light, ethereal glow, sacred geometry,',
+        styleSuffix: ', masterpiece, best quality, highly detailed, magical realism',
+        negativePrompt: 'dark, evil, corrupted, glitch, horror, nsfw, low quality, blurry'
+      },
+      cryptic: {
+        modelName: 'oracle-cryptic.safetensors', 
+        stylePrefix: 'dark mystical vision, ancient symbols, mysterious shadows, occult imagery,',
+        styleSuffix: ', dark fantasy, detailed, atmospheric, moody lighting',
+        negativePrompt: 'bright, cheerful, modern, nsfw, low quality, blurry'
+      },
+      flickering: {
+        modelName: 'oracle-glitched.safetensors',
+        stylePrefix: 'unstable digital vision, flickering reality, data corruption, glitch art,',
+        styleSuffix: ', cyberpunk, digital art, neon, technological, detailed',
+        negativePrompt: 'stable, clean, perfect, nsfw, low quality, blurry'
+      },
+      glitched_ominous: {
+        modelName: 'oracle-glitched.safetensors',
+        stylePrefix: 'corrupted digital nightmare, glitch horror, data decay, system failure,',
+        styleSuffix: ', dark cyberpunk, horror, detailed, ominous atmosphere',
+        negativePrompt: 'clean, bright, happy, nsfw, low quality, blurry'
+      },
+      forbidden_fragment: {
+        modelName: 'oracle-forbidden.safetensors',
+        stylePrefix: 'eldritch horror vision, cosmic terror, forbidden knowledge, reality breakdown,',
+        styleSuffix: ', lovecraftian, horror art, detailed, nightmarish, dark atmosphere',
+        negativePrompt: 'safe, normal, mundane, nsfw, low quality, blurry'
+      }
+    };
+
+    return configs[corruptionLevel as keyof typeof configs] || configs.pristine;
+  }
+
+  /**
+   * Convert base64 to blob
+   */
+  private base64ToBlob(base64: string, mimeType: string): Blob {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
+
+  /**
+   * Test local Stable Diffusion connection
+   */
+  async testLocalSDConnection(): Promise<boolean> {
+    console.log('🔮🧪 === [PROXY] TESTING LOCAL SD CONNECTION ===');
+    // Use a relative path so the Vite proxy catches it
+    const url = `/sdapi/v1/options`;
+    console.log(`🔮📡 [PROXY ACTIVE] Testing relative URL for Vite proxy: ${url}`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      console.log(`🔮📨 Connection test response: ${response.status} ${response.statusText}`);
+      
+      if (response.ok) {
+        const options = await response.json();
+        console.log('🔮✅ Local SD is ONLINE and responding!');
+        console.log('🔮⚙️ Available samplers:', options.samplers?.length || 'unknown');
+        
+        // Test model availability
+        try {
+          const modelsResponse = await fetch(`/sdapi/v1/sd-models`);
+          if (modelsResponse.ok) {
+            const models = await modelsResponse.json();
+            console.log(`🔮🎭 Available models: ${models.length}`);
+            
+            // Check for Oracle models
+            const oracleModels = models.filter((m: {model_name?: string, title?: string}) => 
+              (m.model_name && m.model_name.includes('oracle-')) || 
+              (m.title && m.title.includes('oracle-'))
+            );
+            console.log(`🔮🎯 Oracle models found: ${oracleModels.length}`);
+            oracleModels.forEach((m: {model_name?: string, title?: string}) => 
+              console.log(`  - ${m.title || m.model_name}`)
+            );
+          }
+        } catch (modelError) {
+          console.warn('🔮⚠️ Could not check models:', modelError);
+        }
+        
+        return true;
+      } else {
+        console.error('🔮❌ [PROXY] Local SD responded with error:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('🔮💥 [PROXY] Local SD connection test failed:', error);
+      console.error('🔮🔧 Check:');
+      console.error('  1. SD WebUI is running with --cors-allow-origins flag OR Vite proxy is configured.');
+      console.error('  2. Vite dev server was restarted after config changes.');
+      console.error('  3. URL is correct: http://127.0.0.1:7860');
+      console.error('  4. Windows Firewall allows port 7860');
+      return false;
+    }
+  }
+
+  private determineImageProvider(): ImageProvider {
+    if (this.useLocalSD) {
+      return 'local_sd';
+    }
+    if (this.kieAiApiKey) return 'kie_ai';
+    if (this.dalleApiKey) return 'dalle';
+    return 'kie_ai'; // fallback
   }
 }
 

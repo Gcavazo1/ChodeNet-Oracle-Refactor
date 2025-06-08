@@ -1,6 +1,7 @@
 // 🔮 Oracle Backend Integration - Connects Scaling System to Real Data
 import { supabase } from './supabase';
 import { oracleScaling, OracleMetrics } from './oracleScalingSystem';
+import { sanitizeTextInput } from './textUtils';
 
 interface DatabasePlayerActivity {
   session_id: string;
@@ -349,4 +350,165 @@ export class OracleBackendIntegration {
   }
 }
 
-export const oracleBackend = new OracleBackendIntegration(); 
+export const oracleBackend = new OracleBackendIntegration();
+
+export async function generateLoreComicPanel(
+  loreEntryId: string,
+  storyText: string,
+  visualPrompt: string,
+  corruptionLevel: 'pristine' | 'cryptic' | 'flickering' | 'glitched_ominous' | 'forbidden_fragment' = 'pristine',
+  styleOverride?: string
+): Promise<{
+  success: boolean;
+  comic_panel_url?: string;
+  error?: string;
+}> {
+  try {
+    console.log('🎨 [COMIC GENERATION START] =====================================');
+    console.log('🎨 [INPUT] Lore Entry ID:', loreEntryId);
+    console.log('🎨 [INPUT] Story Text Length:', storyText.length, 'characters');
+    console.log('🎨 [INPUT] Story Preview:', storyText.substring(0, 100) + '...');
+    console.log('🎨 [INPUT] Visual Prompt:', visualPrompt);
+    console.log('🎨 [INPUT] Corruption Level:', corruptionLevel);
+    console.log('🎨 [INPUT] Style Override:', styleOverride || 'None');
+    console.log('🎨 [API] Calling Supabase Edge Function: generate-comic-panel');
+    
+    // Sanitize all text inputs
+    const sanitizedStoryText = sanitizeTextInput(storyText);
+    const sanitizedVisualPrompt = sanitizeTextInput(visualPrompt);
+    const sanitizedStyleOverride = styleOverride ? sanitizeTextInput(styleOverride) : undefined;
+    
+    const payload = {
+      lore_entry_id: loreEntryId,
+      story_text: sanitizedStoryText,
+      visual_prompt: sanitizedVisualPrompt,
+      corruption_level: corruptionLevel,
+      style_override: sanitizedStyleOverride
+    };
+    
+    console.log('🎨 [PAYLOAD] Full request payload:', JSON.stringify(payload, null, 2));
+    
+    const { data, error } = await supabase.functions.invoke('generate-comic-panel', {
+      body: payload
+    });
+
+    console.log('🎨 [RESPONSE] Raw Supabase response:', { data, error });
+
+    if (error) {
+      console.error('🎨 [ERROR] Supabase function error:', error);
+      console.error('🎨 [ERROR] Error details:', JSON.stringify(error, null, 2));
+      return {
+        success: false,
+        error: error.message || 'Failed to generate comic panel'
+      };
+    }
+
+    if (data?.success) {
+      console.log('✅ [SUCCESS] Comic panel generation queued successfully!');
+      console.log('✅ [SUCCESS] Job ID:', data.job_id);
+      console.log('✅ [SUCCESS] Status:', data.status);
+      console.log('✅ [SUCCESS] Estimated completion:', data.estimated_completion);
+      console.log('✅ [SUCCESS] Response metadata:', JSON.stringify(data, null, 2));
+      console.log('🎨 [COMIC GENERATION END] =====================================');
+      return {
+        success: true,
+        job_id: data.job_id,
+        status: data.status || 'queued',
+        message: data.message || 'Generation queued successfully'
+      };
+    }
+
+    console.warn('⚠️ [WARNING] Invalid response structure from comic panel service');
+    console.warn('⚠️ [WARNING] Expected success and comic_panel_url, got:', data);
+    return {
+      success: false,
+      error: 'Invalid response from comic panel service'
+    };
+
+  } catch (error) {
+    console.error('❌ [FATAL ERROR] Comic panel generation failed with exception');
+    console.error('❌ [FATAL ERROR] Exception details:', error);
+    console.error('❌ [FATAL ERROR] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    console.log('🎨 [COMIC GENERATION END - FAILED] =============================');
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+export async function generateLoreAudio(
+  loreEntryId: string,
+  storyText: string
+): Promise<{
+  success: boolean;
+  audio_url?: string;
+  error?: string;
+}> {
+  try {
+    console.log('🎵 [AUDIO GENERATION START] ====================================');
+    console.log('🎵 [INPUT] Lore Entry ID:', loreEntryId);
+    console.log('🎵 [INPUT] Story Text Length:', storyText.length, 'characters');
+    console.log('🎵 [INPUT] Story Preview:', storyText.substring(0, 100) + '...');
+    console.log('🎵 [AUDIO] Estimated narration length:', Math.ceil(storyText.length / 4), 'seconds');
+    console.log('🎵 [API] Calling Supabase Edge Function: elevenlabs-tts-generator');
+    
+    // Sanitize story text for audio generation
+    const sanitizedStoryText = sanitizeTextInput(storyText);
+    
+    const payload = {
+      report_id: loreEntryId,
+      report_text: sanitizedStoryText
+    };
+    
+    console.log('🎵 [PAYLOAD] Full request payload:', JSON.stringify(payload, null, 2));
+    
+    const { data, error } = await supabase.functions.invoke('elevenlabs-tts-generator', {
+      body: payload
+    });
+
+    console.log('🎵 [RESPONSE] Raw Supabase response:', { data, error });
+
+    if (error) {
+      console.error('🎵 [ERROR] Supabase function error:', error);
+      console.error('🎵 [ERROR] Error details:', JSON.stringify(error, null, 2));
+      return {
+        success: false,
+        error: error.message || 'Failed to generate audio'
+      };
+    }
+
+    if (data.status === 'success' && data.audio_url) {
+      console.log('✅ [SUCCESS] Audio generation completed successfully!');
+      console.log('✅ [SUCCESS] Generated URL:', data.audio_url);
+      console.log('✅ [SUCCESS] Audio metadata:', {
+        status: data.status,
+        message: data.message,
+        audio_url: data.audio_url
+      });
+      console.log('🎵 [AUDIO GENERATION END] ====================================');
+      return {
+        success: true,
+        audio_url: data.audio_url
+      };
+    } else {
+      console.warn('⚠️ [WARNING] Audio generation returned unexpected status');
+      console.warn('⚠️ [WARNING] Response status:', data.status);
+      console.warn('⚠️ [WARNING] Response message:', data.message);
+      console.warn('⚠️ [WARNING] Full response:', JSON.stringify(data, null, 2));
+      return {
+        success: false,
+        error: data.message || 'Audio generation failed'
+      };
+    }
+  } catch (error) {
+    console.error('❌ [FATAL ERROR] Audio generation failed with exception');
+    console.error('❌ [FATAL ERROR] Exception details:', error);
+    console.error('❌ [FATAL ERROR] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    console.log('🎵 [AUDIO GENERATION END - FAILED] ==============================');
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+} 

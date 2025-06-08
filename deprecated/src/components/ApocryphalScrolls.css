@@ -1,0 +1,236 @@
+/* ApocryphalScrolls.css */
+.apocryphal-scrolls {
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: rgba(20, 20, 30, 0.95);
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 
+    0 0 20px rgba(0, 240, 255, 0.2),
+    inset 0 0 15px rgba(0, 240, 255, 0.1);
+}
+
+.scrolls-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.scrolls-header h2 {
+  color: #00f0ff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-shadow: 
+    0 0 10px rgba(0, 240, 255, 0.5),
+    0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.header-icon {
+  color: #00f0ff;
+  opacity: 0.8;
+}
+
+.scrolls-container {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.scrolls-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrolls-container::-webkit-scrollbar-track {
+  background: rgba(0, 240, 255, 0.1);
+  border-radius: 4px;
+}
+
+.scrolls-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+}
+
+.scrolls-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.5);
+}
+
+.prophecy-entry {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(30, 30, 40, 0.8);
+  border: 1px solid var(--corruption-color, rgba(0, 240, 255, 0.3));
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* New Forbidden Fragment styles */
+.prophecy-entry.forbidden-fragment {
+  background: rgba(20, 0, 20, 0.95);
+  border: 2px solid #ff0000;
+  box-shadow: 
+    0 0 20px rgba(255, 0, 0, 0.3),
+    inset 0 0 10px rgba(255, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.prophecy-entry.forbidden-fragment::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 0, 0, 0.1) 10px,
+      rgba(255, 0, 0, 0.1) 20px
+    );
+  animation: forbidden-bg 20s linear infinite;
+  pointer-events: none;
+}
+
+.forbidden-fragment .prophecy-content {
+  color: #ff0000;
+  text-shadow: 
+    2px 2px #000,
+    -2px -2px #000;
+  animation: forbidden-text 0.1s infinite;
+}
+
+.forbidden-fragment .prophecy-timestamp {
+  color: #ff0000;
+  font-weight: bold;
+}
+
+.forbidden-fragment-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #ff0000;
+  animation: icon-pulse 2s infinite;
+}
+
+.forbidden-decode-button {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  width: 100%;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 4px;
+  color: #ff0000;
+  font-size: 0.8rem;
+  text-align: center;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.forbidden-decode-button:hover {
+  opacity: 0.9;
+}
+
+@keyframes forbidden-bg {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 100%; }
+}
+
+@keyframes forbidden-text {
+  0%, 100% { transform: translate(0); }
+  25% { transform: translate(2px, -2px); }
+  50% { transform: translate(-2px, 2px); }
+  75% { transform: translate(1px, -1px); }
+}
+
+@keyframes icon-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.prophecy-entry::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--corruption-color, #00f0ff),
+    transparent
+  );
+}
+
+.prophecy-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-family: "Courier New", monospace;
+}
+
+.corruption-indicator {
+  color: var(--corruption-color, #ff3131);
+  animation: pulse-warning 2s infinite;
+}
+
+.scrolls-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+}
+
+.scrolls-error {
+  text-align: center;
+  padding: 2rem;
+  color: #ff3131;
+  font-family: "Courier New", monospace;
+}
+
+@keyframes pulse-warning {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.prophecy-content {
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px var(--corruption-color, rgba(0, 240, 255, 0.5));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .apocryphal-scrolls {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .scrolls-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .prophecy-content {
+    font-size: 1rem;
+  }
+}

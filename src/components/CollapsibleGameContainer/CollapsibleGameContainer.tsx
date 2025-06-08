@@ -15,6 +15,12 @@ export interface GameMessage {
   type: string;
   timestamp: Date;
   data: any; // Complete event data from the game
+  payload?: {
+    session_id?: string;
+    player_address?: string;
+    wallet_address?: string;
+    [key: string]: any;
+  };
 }
 
 interface CollapsibleGameContainerProps {

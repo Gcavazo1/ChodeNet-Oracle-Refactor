@@ -67,7 +67,7 @@ export const CommunityGirthTracker: React.FC = () => {
       
       // Aggregate all game events to calculate community metrics
       const { data: gameEvents, error: eventsError } = await supabase
-        .from('chode_game_events')
+        .from('live_game_events')
         .select(`
           event_type,
           event_payload,
@@ -268,15 +268,19 @@ export const CommunityGirthTracker: React.FC = () => {
   useEffect(() => {
     const subscription = supabase
       .channel('community_events')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chode_game_events'
-      }, (payload) => {
-        console.log('New community event:', payload);
-        // Refresh stats when new events come in
-        setTimeout(fetchCommunityStats, 1000);
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'live_game_events'
+        },
+        (payload) => {
+          console.log('CommunityGirthTracker received a change:', payload);
+          // Refresh stats when new events come in
+          setTimeout(fetchCommunityStats, 1000);
+        }
+      )
       .subscribe();
 
     return () => {

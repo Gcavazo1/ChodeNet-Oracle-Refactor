@@ -16,11 +16,14 @@ interface ProphecyStore {
   isLoading: boolean;
   error: string | null;
   unreadCount: number;
-  setupRealtimeSubscription: () => Promise<void>;
+  isSubscribed: boolean;
+  setupRealtimeSubscription: () => Promise<(() => void) | void>;
   resetUnreadCount: () => void;
   incrementUnreadCount: () => void;
   generateProphecy: (metrics: any, topic: string | null) => Promise<void>;
 }
+
+let globalProphecySubscription: any = null;
 
 export const useProphecyStore = create<ProphecyStore>((set, get) => ({
   prophecies: [],
@@ -28,9 +31,22 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
   isLoading: true,
   error: null,
   unreadCount: 0,
+  isSubscribed: false,
 
   setupRealtimeSubscription: async () => {
-    console.log('ProphecyStore: Setting up realtime subscription...');
+    if (get().isSubscribed || globalProphecySubscription) {
+      console.log('ProphecyStore: Subscription already exists, returning existing cleanup function');
+      return () => {
+        if (globalProphecySubscription) {
+          console.log('ProphecyStore: Cleaning up existing subscription');
+          globalProphecySubscription.unsubscribe();
+          globalProphecySubscription = null;
+          set({ isSubscribed: false });
+        }
+      };
+    }
+
+    console.log('ProphecyStore: Setting up NEW realtime subscription...');
     try {
       console.log('ProphecyStore: Fetching initial prophecies...');
       const { data: initialProphecies, error: fetchError } = await supabase
@@ -65,8 +81,9 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
       });
 
       console.log('ProphecyStore: Setting up Supabase channel subscription...');
-      const subscription = supabase
-        .channel('prophecy-feed')
+      const channelName = `prophecy-feed-${Date.now()}`;
+      globalProphecySubscription = supabase
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -102,18 +119,31 @@ export const useProphecyStore = create<ProphecyStore>((set, get) => ({
         )
         .subscribe((status) => {
           console.log('ProphecyStore: Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            set({ isSubscribed: true });
+          } else if (status === 'CLOSED') {
+            set({ isSubscribed: false });
+            globalProphecySubscription = null;
+          }
         });
 
       return () => {
         console.log('ProphecyStore: Cleaning up subscription');
-        subscription.unsubscribe();
+        if (globalProphecySubscription) {
+          globalProphecySubscription.unsubscribe();
+          globalProphecySubscription = null;
+        }
+        set({ isSubscribed: false });
       };
     } catch (error) {
       console.error('ProphecyStore: Error in subscription setup:', error);
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error',
-        isLoading: false 
+        isLoading: false,
+        isSubscribed: false
       });
+      
+      return () => {};
     }
   },
 

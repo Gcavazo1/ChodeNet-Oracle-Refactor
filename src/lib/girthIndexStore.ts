@@ -18,7 +18,8 @@ interface GirthIndexStore {
   stabilityStatus: StabilityStateType;
   isLoading: boolean;
   error: string | null;
-  setupRealtimeSubscription: () => Promise<void>;
+  isSubscribed: boolean;
+  setupRealtimeSubscription: () => Promise<() => void>;
   updateMetrics: (metrics: Partial<{
     girthResonance: number;
     tapSurgeIndex: TapSurgeState;
@@ -27,6 +28,9 @@ interface GirthIndexStore {
   }>) => Promise<void>;
 }
 
+// Global variable to track subscription to prevent duplicates
+let globalGirthSubscription: any = null;
+
 export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
   girthResonance: 50,
   tapSurgeIndex: 'STEADY_POUNDING',
@@ -34,10 +38,24 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
   stabilityStatus: 'PRISTINE',
   isLoading: true,
   error: null,
+  isSubscribed: false,
 
   setupRealtimeSubscription: async () => {
     try {
-      console.log('[GirthIndexStore] Setting up realtime subscription...');
+      // Check if already subscribed
+      if (get().isSubscribed || globalGirthSubscription) {
+        console.log('[GirthIndexStore] Subscription already exists, returning existing cleanup function');
+        return () => {
+          if (globalGirthSubscription) {
+            console.log('[GirthIndexStore] Cleaning up existing subscription');
+            globalGirthSubscription.unsubscribe();
+            globalGirthSubscription = null;
+            set({ isSubscribed: false });
+          }
+        };
+      }
+
+      console.log('[GirthIndexStore] Setting up NEW realtime subscription...');
       
       // Initial fetch
       const { data, error } = await supabase
@@ -67,9 +85,10 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
         console.log('[GirthIndexStore] Store updated with initial data:', get());
       }
 
-      // Setup realtime subscription
-      const subscription = supabase
-        .channel('girth-index-changes')
+      // Setup realtime subscription with unique channel name
+      const channelName = `girth-index-changes-${Date.now()}`;
+      globalGirthSubscription = supabase
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -98,18 +117,32 @@ export const useGirthIndexStore = create<GirthIndexStore>((set, get) => ({
         )
         .subscribe((status) => {
           console.log('[GirthIndexStore] Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            set({ isSubscribed: true });
+          } else if (status === 'CLOSED') {
+            set({ isSubscribed: false });
+            globalGirthSubscription = null;
+          }
         });
 
       return () => {
         console.log('[GirthIndexStore] Cleaning up subscription');
-        subscription.unsubscribe();
+        if (globalGirthSubscription) {
+          globalGirthSubscription.unsubscribe();
+          globalGirthSubscription = null;
+        }
+        set({ isSubscribed: false });
       };
     } catch (error) {
       console.error('[GirthIndexStore] Error in subscription setup:', error);
       set({ 
         error: error instanceof Error ? error.message : 'Unknown error',
-        isLoading: false 
+        isLoading: false,
+        isSubscribed: false
       });
+      
+      // Return a no-op cleanup function
+      return () => {};
     }
   },
 

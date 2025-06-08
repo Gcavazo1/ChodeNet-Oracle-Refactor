@@ -1,37 +1,24 @@
 import React from 'react';
 import { Scroll, Sparkles } from 'lucide-react';
+import { useOracleFlowStore } from '../../lib/oracleFlowStore';
 import './RitualRequests.css';
 
-interface RitualRequestsProps {
-  currentTopic: string | null;
-  onTopicSelect: (topic: string | null) => void;
-}
-
-export const RitualRequests: React.FC<RitualRequestsProps> = ({
-  currentTopic,
-  onTopicSelect,
-}) => {
-  const ritualTopics = [
-    {
-      id: 'FUTURE_OF_GIRTH',
-      text: 'Oracle, reveal the secrets of the Future of $GIRTH!',
-    },
-    {
-      id: 'ANCIENT_TECHNIQUES',
-      text: 'Oracle, speak of the Ancient Chodes and their Lost Slapping Techniques!',
-    },
-    {
-      id: 'MEME_COINS',
-      text: 'Oracle, what omens do the Next Meme Coins carry?',
-    },
-    {
-      id: 'FUD_STORMS',
-      text: 'Oracle, warn us of the Coming FUD Storms!',
-    },
-  ];
+export const RitualRequests: React.FC = () => {
+  const { 
+    currentTopic, 
+    availableTopics, 
+    selectTopic, 
+    switchToTab 
+  } = useOracleFlowStore();
 
   const handleTopicClick = (topicId: string) => {
-    onTopicSelect(currentTopic === topicId ? null : topicId);
+    const newTopic = currentTopic === topicId ? null : topicId;
+    selectTopic(newTopic);
+    
+    // If a topic is selected, automatically switch to the chamber
+    if (newTopic) {
+      switchToTab('chamber');
+    }
   };
 
   return (
@@ -43,11 +30,12 @@ export const RitualRequests: React.FC<RitualRequestsProps> = ({
       </div>
 
       <div className="ritual-topics">
-        {ritualTopics.map((topic) => (
+        {availableTopics.map((topic) => (
           <button
             key={topic.id}
             className={`ritual-button ${currentTopic === topic.id ? 'active' : ''}`}
             onClick={() => handleTopicClick(topic.id)}
+            title={topic.description}
           >
             <Sparkles className="button-icon" size={16} />
             <span>{topic.text}</span>
@@ -60,8 +48,18 @@ export const RitualRequests: React.FC<RitualRequestsProps> = ({
         <div className="current-topic">
           <span>Oracle is currently divining on:</span>
           <span className="topic-text">
-            {ritualTopics.find(t => t.id === currentTopic)?.text}
+            {availableTopics.find(t => t.id === currentTopic)?.text}
           </span>
+          <div className="topic-description">
+            {availableTopics.find(t => t.id === currentTopic)?.description}
+          </div>
+        </div>
+      )}
+
+      {!currentTopic && (
+        <div className="ritual-guidance">
+          <p>Select a ritual topic above to focus the Oracle's divine attention.</p>
+          <p>Each topic will guide the Oracle to provide specific wisdom tailored to your inquiry.</p>
         </div>
       )}
     </div>
