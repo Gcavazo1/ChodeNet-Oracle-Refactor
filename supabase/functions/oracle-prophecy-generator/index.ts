@@ -157,11 +157,20 @@ function determineCorruptionLevel(
   else if (resonance < 40) corruptionScore += 2
   else if (resonance < 60) corruptionScore += 1
 
-  // Stability influence
-  if (stability === 'DATA_DAEMON_POSSESSION') corruptionScore += 4
-  else if (stability === 'CRITICAL_CORRUPTION') corruptionScore += 3
-  else if (stability === 'UNSTABLE') corruptionScore += 2
-  else if (stability === 'FLICKERING') corruptionScore += 1
+  // Stability influence (support both legacy and new naming conventions)
+  const normalizedStability = stability.toUpperCase();
+
+  // Legacy names (kept for backward-compat)
+  if (normalizedStability === 'DATA_DAEMON_POSSESSION') corruptionScore += 4;
+  else if (normalizedStability === 'CRITICAL_CORRUPTION') corruptionScore += 3;
+  else if (normalizedStability === 'UNSTABLE') corruptionScore += 2;
+  else if (normalizedStability === 'FLICKERING') corruptionScore += 1;
+
+  // New Oracle stability statuses
+  else if (normalizedStability === 'FORBIDDEN_FRAGMENT') corruptionScore += 4;
+  else if (normalizedStability === 'GLITCHED_OMINOUS') corruptionScore += 3;
+  else if (normalizedStability === 'CRYPTIC') corruptionScore += 2;
+  else if (normalizedStability === 'PRISTINE') corruptionScore += 0; // pristine adds no corruption
 
   // Morale influence
   if (morale === 'SUICIDE_WATCH') corruptionScore += 2
