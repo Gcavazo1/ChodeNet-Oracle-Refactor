@@ -177,16 +177,18 @@ function determineCorruptionLevel(
   else if (resonance < 40) score += 2;
   else if (resonance < 60) score += 1;
 
-  const s = stability.toLowerCase();
+  const s = (stability ?? "").toString().toLowerCase();
   if (["forbidden_fragment", "data_daemon_possession"].includes(s)) score += 4;
   else if (["glitched_ominous", "critical_corruption"].includes(s)) score += 3;
   else if (["cryptic", "unstable"].includes(s)) score += 2;
   else if (s === "flickering") score += 1;
 
-  if (morale === "SUICIDE_WATCH") score += 2;
-  else if (morale === "DEMORALIZED") score += 1;
+  const m = (morale ?? "").toString().toUpperCase();
+  if (m === "SUICIDE_WATCH") score += 2;
+  else if (m === "DEMORALIZED") score += 1;
 
-  if (tapSurge === "FLACCID_DRIZZLE" || tapSurge === "ASCENDED_NIRVANA") score += 1;
+  const t = (tapSurge ?? "").toString().toUpperCase();
+  if (t === "FLACCID_DRIZZLE" || t === "ASCENDED_NIRVANA") score += 1;
 
   if (score >= 6) return "forbidden_fragment";
   if (score >= 4) return "glitched_ominous";
