@@ -24,7 +24,7 @@ interface GeneratedProphecyAsset {
   };
 }
 
-type ImageProvider = 'kie_ai' | 'dalle' | 'midjourney' | 'local_sd';
+type ImageProvider = 'kie_ai' | 'local_sd';
 
 /**
  * 🎨 PROPHECY VISUAL POST-PROCESSING PIPELINE
@@ -346,7 +346,6 @@ export class ProphecyVisualProcessor {
 export class DirectAPIIntegration {
   private groqApiKey: string;
   private kieAiApiKey: string;
-  private dalleApiKey: string;
   private elevenlabsApiKey: string;
   private imageProvider: ImageProvider;
   private visualProcessor: ProphecyVisualProcessor;
@@ -358,7 +357,6 @@ export class DirectAPIIntegration {
   constructor() {
     this.groqApiKey = import.meta.env.VITE_GROQ_API_KEY || '';
     this.kieAiApiKey = import.meta.env.VITE_KIE_AI_API_KEY || '';
-    this.dalleApiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
     this.elevenlabsApiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
     
     // Use the proxy path for local SD
@@ -491,40 +489,9 @@ export class DirectAPIIntegration {
     }
   }
 
-  // === DALL-E IMAGE GENERATION ===
-  
-  async generateImageWithDALLE(prompt: string): Promise<string> {
-    if (!this.dalleApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    try {
-      const response = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.dalleApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt,
-          n: 1,
-          size: '512x512',
-          quality: 'standard'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`DALL-E API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.data?.[0]?.url || '';
-    } catch (error) {
-      console.error('🎨 DALL-E API error:', error);
-      throw error;
-    }
-  }
+  // === IMAGE GENERATION NOTE ===
+  // DALL-E removed - using Kie AI and Local Stable Diffusion instead
+  // All image generation now goes through Kie AI or Local SD based on configuration
 
   // === ELEVENLABS TEXT-TO-SPEECH ===
   
@@ -576,8 +543,7 @@ export class DirectAPIIntegration {
     switch (this.imageProvider) {
       case 'kie_ai':
         return await this.generateImageWithKieAI(prompt, style);
-      case 'dalle':
-        return await this.generateImageWithDALLE(prompt);
+      // DALL-E support removed - using Kie AI and Local SD only
       default:
         throw new Error(`Unsupported image provider: ${this.imageProvider}`);
     }
@@ -692,9 +658,7 @@ export class DirectAPIIntegration {
         // We'll skip actual image generation for connection test
         results.imageProvider = true;
         console.log('✅ Kie AI configured');
-      } else if (this.imageProvider === 'dalle' && this.dalleApiKey) {
-        results.imageProvider = true;
-        console.log('✅ DALL-E configured');
+      // DALL-E support removed
       } else {
         results.errors.push(`${this.imageProvider} API key not configured`);
       }
@@ -723,7 +687,6 @@ export class DirectAPIIntegration {
     return {
       groq: !!this.groqApiKey,
       kie_ai: !!this.kieAiApiKey,
-      dalle: !!this.dalleApiKey,
       elevenlabs: !!this.elevenlabsApiKey,
       local_sd: this.useLocalSD
     };
@@ -963,7 +926,6 @@ export class DirectAPIIntegration {
       return 'local_sd';
     }
     if (this.kieAiApiKey) return 'kie_ai';
-    if (this.dalleApiKey) return 'dalle';
     return 'kie_ai'; // fallback
   }
 }

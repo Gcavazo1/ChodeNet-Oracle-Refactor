@@ -3,9 +3,10 @@
   position: relative;
   padding: 1rem;
   background: linear-gradient(135deg, 
-    rgba(107, 70, 193, 0.08) 0%, 
-    rgba(236, 72, 153, 0.08) 50%, 
-    rgba(245, 158, 11, 0.08) 100%
+    rgba(32, 4, 84, 0.904) 0%, 
+    rgba(249, 4, 126, 0.349) 40%, 
+    rgba(245, 159, 11, 0.359) 60%,
+    rgba(32, 4, 84, 0.904) 100%
   );
   border: 1px solid rgba(107, 70, 193, 0.2);
   border-radius: 0.75rem;
@@ -18,7 +19,7 @@
   box-shadow: 0 4px 16px rgba(107, 70, 193, 0.1);
 }
 
-/* Empty State */
+/* Empty State */z`
 .smart-alerts-bar.empty {
   background: rgba(107, 70, 193, 0.05);
   border-style: dashed;
@@ -37,7 +38,7 @@
 }
 
 .empty-icon {
-  font-size: 1.5rem;
+  font-size: 2.0rem;
   animation: cosmic-float 4s ease-in-out infinite;
 }
 
@@ -75,6 +76,21 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* Clickable Alert Enhancement */
+.alert-card.clickable {
+  transition: all 0.2s ease;
+}
+
+.alert-card.clickable:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(107, 70, 193, 0.3);
+  border-color: var(--oracle-primary) !important;
+}
+
+.alert-card.clickable:active {
+  transform: translateY(0) scale(0.98);
+}
+
 .alert-card::before {
   content: '';
   position: absolute;
@@ -94,32 +110,32 @@
 .alert-prophecy {
   border-color: var(--oracle-primary);
   background: linear-gradient(135deg, 
-    rgba(107, 70, 193, 0.15) 0%, 
-    rgba(168, 85, 247, 0.15) 100%
+    rgba(31, 180, 221, 0.315) 0%, 
+    rgba(223, 14, 174, 0.379) 100%
   );
 }
 
 .alert-poll {
   border-color: var(--oracle-secondary);
   background: linear-gradient(135deg, 
-    rgba(236, 72, 153, 0.15) 0%, 
-    rgba(244, 114, 182, 0.15) 100%
+    rgba(223, 14, 174, 0.379) 0%, 
+    rgba(31, 180, 221, 0.315) 100%
   );
 }
 
 .alert-milestone {
   border-color: var(--oracle-accent);
   background: linear-gradient(135deg, 
-    rgba(245, 158, 11, 0.15) 0%, 
-    rgba(251, 191, 36, 0.15) 100%
+    rgba(252, 159, 0, 0.301) 0%, 
+    rgba(85, 0, 243, 0.311) 100%
   );
 }
 
 .alert-glitch {
   border-color: var(--status-danger);
   background: linear-gradient(135deg, 
-    rgba(239, 68, 68, 0.15) 0%, 
-    rgba(220, 38, 38, 0.15) 100%
+    rgba(85, 0, 243, 0.311) 0%, 
+    rgba(252, 159, 0, 0.301) 100%
   );
   animation: glitch-pulse 2s ease-in-out infinite;
 }
@@ -127,8 +143,8 @@
 .alert-community {
   border-color: var(--status-live);
   background: linear-gradient(135deg, 
-    rgba(16, 185, 129, 0.15) 0%, 
-    rgba(34, 197, 94, 0.15) 100%
+    rgba(2, 244, 163, 0.293) 0%, 
+    rgba(247, 116, 1, 0.292) 100%
   );
 }
 
@@ -161,7 +177,7 @@
 
 /* Alert Icon */
 .alert-icon {
-  font-size: 1.5rem;
+  font-size: 2.0rem;
   flex-shrink: 0;
   animation: icon-glow 3s ease-in-out infinite;
 }
@@ -225,24 +241,24 @@
   right: 0.5rem;
   font-family: 'Fira Code', monospace;
   font-size: 0.625rem;
-  color: #9CA3AF;
+  color: #ffff00;
   opacity: 0.7;
 }
 
 /* Dismiss Button */
 .alert-dismiss {
   position: absolute;
-  top: 0.25rem;
+  top: 0.95rem;
   right: 0.25rem;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.85rem;
+  height: 1.35rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(253, 2, 2, 0.516);
   border-radius: 50%;
-  color: #EF4444;
+  color: #f90000;
   font-size: 0.875rem;
   font-weight: bold;
   cursor: pointer;
@@ -268,8 +284,8 @@
   justify-content: center;
   min-width: 60px;
   padding: 0.5rem;
-  background: rgba(107, 70, 193, 0.1);
-  border: 1px dashed rgba(107, 70, 193, 0.3);
+  background: rgba(230, 144, 7, 0.505);
+  border: 3px dashed rgba(10, 220, 185, 0.647);
   border-radius: 0.5rem;
   color: var(--oracle-accent);
   cursor: pointer;
@@ -403,7 +419,7 @@
   }
   
   .alert-icon {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
 }
 
@@ -454,7 +470,7 @@
   }
   
   .alert-icon {
-    font-size: 1rem;
+    font-size: 1.5rem;
   }
   
   .alert-timestamp {

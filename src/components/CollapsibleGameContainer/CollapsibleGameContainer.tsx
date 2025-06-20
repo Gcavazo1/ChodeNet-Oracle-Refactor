@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { realTimeOracle, OracleResponse } from '../../lib/realTimeOracleEngine';
+import { setGameIframe, receiveGameEvent } from '../../lib/gameEventHandler';
 import './CollapsibleGameContainer.css';
 
 export interface GameState {
@@ -51,12 +53,26 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'failed'>('connecting');
   const [popoutWindow, setPopoutWindow] = useState<Window | null>(null);
+
   
   const gameIframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 🌉 NEW: Wallet integration for Phase 2.1
+  const wallet = useWallet();
+
   // Use controlled or internal docked state
   const isDocked = controlledDocked !== undefined ? controlledDocked : internalDocked;
+  
+  // Debug logging for docked state
+  useEffect(() => {
+    console.log('🎮 Docked state update:', {
+      controlledDocked,
+      internalDocked,
+      isDocked,
+      timestamp: new Date().toISOString()
+    });
+  }, [controlledDocked, internalDocked, isDocked]);
 
   // Detect mobile device
   useEffect(() => {
@@ -71,44 +87,91 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
   // Listen for messages from the game iframe
   const handleGameMessage = useCallback((event: MessageEvent) => {
+    // === COMMUNICATION LOG: MESSAGE RECEIVED ===
+    console.log('📥 [RECV] Raw message from iframe:', {
+      data: event.data,
+      origin: event.origin,
+      source: event.source,
+      timestamp: new Date().toISOString()
+    });
+
     // Validate that the message is from our iframe
     if (event.source !== gameIframeRef.current?.contentWindow) {
+      console.warn('⚠️ [RECV] Message rejected - not from our iframe:', {
+        receivedSource: event.source,
+        expectedSource: gameIframeRef.current?.contentWindow,
+        data: event.data
+      });
       return;
     }
 
-    console.log('🎮 Game Message Received:', event.data);
+    console.log('✅ [RECV] Message validated - processing:', event.data);
     
     try {
       const gameEventData = JSON.parse(event.data);
       
+      console.log('🔄 [PARSE] Event data parsed successfully:', {
+        event_type: gameEventData.event_type,
+        session_id: gameEventData.session_id,
+        player_address: gameEventData.player_address,
+        payload_keys: gameEventData.event_payload ? Object.keys(gameEventData.event_payload) : [],
+        timestamp: gameEventData.timestamp_utc
+      });
+      
+      // === BACKEND FORWARDING FOR STATE PERSISTENCE ===
+      console.log('💾 [BACKEND] Forwarding event to backend for processing:', gameEventData.event_type);
+      
+      // Forward to backend via gameEventHandler - this handles state persistence and logging
+      const mockMessageEvent = {
+        data: event.data,
+        origin: 'http://localhost:5173', // Match the iframe origin
+        source: gameIframeRef.current?.contentWindow
+      } as MessageEvent;
+      receiveGameEvent(mockMessageEvent);
+      
       // === REAL-TIME ORACLE PROCESSING ===
+      console.log('🔮 [ORACLE] Sending event to Oracle engine:', gameEventData.event_type);
+      
       // Send to Real-Time Oracle Engine for processing
       realTimeOracle.processGameEvent(gameEventData)
         .then((oracleResponse) => {
           if (oracleResponse && oracleResponse.send_to_game) {
+            console.log('🔮 [ORACLE] Oracle generated response - sending to game:', {
+              response_id: oracleResponse.response_id,
+              event_id: oracleResponse.event_id,
+              notification_type: oracleResponse.notification.type,
+              send_to_game: oracleResponse.send_to_game
+            });
             // === SEND ORACLE RESPONSE BACK TO GAME ===
             sendOracleResponseToGame(oracleResponse);
+          } else {
+            console.log('🔮 [ORACLE] Oracle chose not to respond to this event:', gameEventData.event_type);
           }
         })
         .catch((error) => {
-          console.error('🔮 Oracle processing error:', error);
+          console.error('❌ [ORACLE] Oracle processing error:', error);
         });
       
       // Convert to our internal GameMessage format
       const message: GameMessage = {
         type: gameEventData.event_type || 'unknown',
         timestamp: new Date(gameEventData.timestamp_utc || Date.now()),
-        data: gameEventData
+        data: gameEventData,
+        payload: gameEventData.event_payload
       };
+      
+      console.log('📤 [FORWARD] Forwarding to parent component (Dashboard):', {
+        type: message.type,
+        timestamp: message.timestamp,
+        hasPayload: !!message.payload
+      });
       
       // Send to parent component (Dashboard)
       onGameMessage?.(message);
       
-      setLastMessage(message);
-      
     } catch (error) {
-      console.error('🔮 Error parsing game message:', error);
-      console.log('Raw message data:', event.data);
+      console.error('❌ [PARSE] Error parsing game message:', error);
+      console.log('📋 [DEBUG] Raw message data that failed to parse:', event.data);
     }
   }, [onGameMessage]);
 
@@ -118,10 +181,89 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
     return () => window.removeEventListener('message', handleGameMessage);
   }, [handleGameMessage]);
 
+  // 🌉 NEW: Monitor wallet changes for Phase 2.1
+  useEffect(() => {
+    console.log('🔄 [WALLET] Wallet state changed:', {
+        connected: wallet.connected,
+        address: wallet.publicKey?.toString()
+      });
+    
+    // Send wallet status to docked game
+    if (isDocked && gameIframeRef.current?.contentWindow) {
+      const walletStatusMessage = {
+        type: 'wallet_status_update',
+        connected: wallet.connected,
+        address: wallet.publicKey?.toString() || '',
+        timestamp: new Date().toISOString()
+      };
+      
+      try {
+        const targetOrigin = getIframeOrigin();
+        gameIframeRef.current.contentWindow.postMessage(JSON.stringify(walletStatusMessage), targetOrigin);
+        console.log('📤 [WALLET] Sent wallet status to docked game:', walletStatusMessage);
+      } catch (error) {
+        console.error('❌ [WALLET] Failed to send wallet status to docked game:', error);
+      }
+    }
+
+    // 🌉 NEW: Send wallet status to undocked game
+    if (!isDocked && popoutWindow && !popoutWindow.closed) {
+      console.log('🔄 [WALLET] Sending wallet update to undocked window...');
+      sendWalletStatusToUndocked(popoutWindow);
+    }
+  }, [wallet.connected, wallet.publicKey, isDocked, popoutWindow]);
+
+  // Helper function to get iframe origin
+  const getIframeOrigin = () => {
+    if (gameIframeRef.current?.src) {
+      try {
+        const url = new URL(gameIframeRef.current.src, window.location.origin);
+        return url.origin;
+      } catch {
+        return window.location.origin;
+      }
+    }
+    return window.location.origin;
+  };
+
+  // 🌉 NEW: Send wallet status to undocked window
+  const sendWalletStatusToUndocked = (undockedWindow: Window) => {
+    if (!undockedWindow || undockedWindow.closed) {
+      console.warn('[Undocked] ⚠️ Cannot send wallet status - window not available');
+      return;
+    }
+
+    const walletStatusMessage = {
+      type: 'wallet_status_update',
+      connected: wallet.connected,
+      address: wallet.publicKey?.toString() || '',
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      console.log('[Undocked] 📤 Sending wallet status to undocked window:', walletStatusMessage);
+      undockedWindow.postMessage(JSON.stringify(walletStatusMessage), '*');
+      console.log('[Undocked] ✅ Wallet status sent to undocked window successfully');
+    } catch (error) {
+      console.error('[Undocked] ❌ Failed to send wallet status to undocked window:', error);
+    }
+  };
+
   // === NEW: Send Oracle responses back to the game ===
   const sendOracleResponseToGame = useCallback((oracleResponse: OracleResponse) => {
+    console.log('📤 [SEND] Attempting to send Oracle response to game:', {
+      response_id: oracleResponse.response_id,
+      event_id: oracleResponse.event_id,
+      notification_type: oracleResponse.notification.type,
+      iframe_ready: !!gameIframeRef.current?.contentWindow
+    });
+
     if (!gameIframeRef.current?.contentWindow) {
-      console.warn('🔮 Cannot send Oracle response - game iframe not ready');
+      console.error('❌ [SEND] Cannot send Oracle response - game iframe not ready:', {
+        iframe_exists: !!gameIframeRef.current,
+        content_window_exists: !!gameIframeRef.current?.contentWindow,
+        response_id: oracleResponse.response_id
+      });
       return;
     }
 
@@ -136,59 +278,32 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
     try {
       const messageJson = JSON.stringify(oracleMessage);
-      gameIframeRef.current.contentWindow.postMessage(messageJson, '*');
-      console.log('🔮 Oracle Response Sent to Game:', oracleMessage);
+      console.log('📤 [SEND] Sending Oracle response via postMessage:', {
+        message_size: messageJson.length,
+        message_type: oracleMessage.type,
+        notification_title: oracleMessage.notification.title,
+        target_origin: '*'
+      });
+      
+      const targetOrigin = getIframeOrigin();
+      gameIframeRef.current.contentWindow.postMessage(messageJson, targetOrigin);
+      
+      console.log('✅ [SEND] Oracle response sent successfully:', {
+        response_id: oracleMessage.response_id,
+        timestamp: oracleMessage.timestamp
+      });
     } catch (error) {
-      console.error('🔮 Error sending Oracle response to game:', error);
+      console.error('❌ [SEND] Error sending Oracle response to game:', {
+        error: error.message,
+        response_id: oracleResponse.response_id,
+        stack: error.stack
+      });
     }
   }, []);
 
-  // === ENHANCED: Oracle Testing Functions ===
-  const testOracleConnection = useCallback(() => {
-    if (!gameIframeRef.current?.contentWindow) {
-      console.warn('🔮 Cannot test Oracle - game iframe not ready');
-      return;
-    }
 
-    const testResponse = {
-      type: 'oracle_test',
-      message: 'The Oracle awakens... Testing bi-directional communication.',
-      timestamp: new Date().toISOString(),
-      test_id: `test_${Date.now()}`
-    };
 
-    try {
-      const messageJson = JSON.stringify(testResponse);
-      gameIframeRef.current.contentWindow.postMessage(messageJson, '*');
-      console.log('🔮 Oracle Test Message Sent:', testResponse);
-    } catch (error) {
-      console.error('🔮 Error sending Oracle test:', error);
-    }
-  }, []);
 
-  const sendProphecyToGame = useCallback((prophecy: any) => {
-    if (!gameIframeRef.current?.contentWindow) {
-      console.warn('🔮 Cannot send prophecy - game iframe not ready');
-      return;
-    }
-
-    const prophecyMessage = {
-      type: 'oracle_prophecy',
-      title: prophecy.title,
-      message: prophecy.message,
-      icon: prophecy.icon,
-      priority: prophecy.priority,
-      timestamp: new Date().toISOString()
-    };
-
-    try {
-      const messageJson = JSON.stringify(prophecyMessage);
-      gameIframeRef.current.contentWindow.postMessage(messageJson, '*');
-      console.log('🔮 Prophecy Sent to Game:', prophecyMessage);
-    } catch (error) {
-      console.error('🔮 Error sending prophecy to game:', error);
-    }
-  }, []);
 
   // Notify parent of game state changes
   useEffect(() => {
@@ -197,19 +312,63 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
   // Handle iframe load
   const handleIframeLoad = () => {
-    console.log('🎮 Game iframe loaded');
-    setGameState(prev => ({ ...prev, isLoaded: true }));
+    console.log('🎮 Game iframe loaded successfully');
+    setGameState(prev => ({ ...prev, isLoaded: true, isConnected: true }));
+    setConnectionStatus('connected'); // Set connected when iframe loads
+    
+    // 🔧 NEW: Set iframe reference for state persistence
+    if (gameIframeRef.current) {
+      setGameIframe(gameIframeRef.current);
+      console.log('🔧 [STATE] Game iframe reference set for state persistence');
+    }
+
+    // 🌉 NEW: Send initial wallet status for Phase 2.1
+    if (gameIframeRef.current) {
+      console.log('🌉 [PHASE2.1] Sending initial wallet status to game...', {
+        iframe: !!gameIframeRef.current,
+        wallet: !!wallet,
+        walletConnected: wallet.connected
+      });
+      
+      // Send initial wallet status after iframe loads
+      setTimeout(() => {
+        const walletStatusMessage = {
+          type: 'wallet_status_update',
+          connected: wallet.connected,
+          address: wallet.publicKey?.toString() || '',
+          timestamp: new Date().toISOString()
+        };
+        
+        try {
+          const targetOrigin = getIframeOrigin();
+          gameIframeRef.current?.contentWindow?.postMessage(JSON.stringify(walletStatusMessage), targetOrigin);
+          console.log('✅ [PHASE2.1] Initial wallet status sent successfully');
+        } catch (error) {
+          console.error('❌ [PHASE2.1] Failed to send initial wallet status:', error);
+        }
+      }, 1000);
+    }
     
     // Send initial message to game to establish communication
     setTimeout(() => {
+      console.log('🎮 Sending initial connection test to game...');
       sendMessageToGame({
         type: 'oracle_connection_test',
         payload: {
-          message: 'Oracle frontend connected',
-          timestamp: new Date().toISOString()
+          message: 'Oracle frontend connected - testing communication',
+          timestamp: new Date().toISOString(),
+          test_phase: 'initial_connection'
         }
       });
     }, 2000);
+    
+    // Additional verification check
+    setTimeout(() => {
+      if (gameIframeRef.current?.contentWindow) {
+        console.log('🎮 Iframe verification - content window accessible:', !!gameIframeRef.current.contentWindow);
+        console.log('🎮 Game callbacks available:', !!(gameIframeRef.current.contentWindow as any).chodeNetGodotCallbacks);
+      }
+    }, 3000);
   };
 
   // Handle iframe error
@@ -221,29 +380,77 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
   // Send message to game (both docked and undocked)
   const sendMessageToGame = (message: any) => {
+    console.log('📤 [SEND] Attempting to send message to game:', {
+      message_type: message.type,
+      is_docked: isDocked,
+      iframe_ready: !!(isDocked && gameIframeRef.current?.contentWindow),
+      popout_ready: !!(!isDocked && popoutWindow && !popoutWindow.closed),
+      timestamp: new Date().toISOString()
+    });
+
     // Send to docked iframe
     if (isDocked && gameIframeRef.current?.contentWindow) {
       try {
-        gameIframeRef.current.contentWindow.chodeNetGodotCallbacks?.godotReceiveMessageFromParent?.(
-          JSON.stringify(message)
-        );
+        const callbacks = gameIframeRef.current.contentWindow.chodeNetGodotCallbacks;
+        console.log('📤 [SEND] Sending to docked iframe via callbacks:', {
+          callbacks_exist: !!callbacks,
+          godot_function_exists: !!callbacks?.godotReceiveMessageFromParent,
+          message_type: message.type
+        });
+        
+        callbacks?.godotReceiveMessageFromParent?.(JSON.stringify(message));
+        
+        console.log('✅ [SEND] Message sent to docked game successfully:', {
+          message_type: message.type
+        });
       } catch (error) {
-        console.error('Error sending message to docked game:', error);
+        console.error('❌ [SEND] Error sending message to docked game:', {
+          error: error.message,
+          message_type: message.type,
+          stack: error.stack
+        });
       }
     }
 
     // Send to popout window
     if (!isDocked && popoutWindow && !popoutWindow.closed) {
       try {
-        popoutWindow.chodeNetGodotCallbacks?.godotReceiveMessageFromParent?.(
-          JSON.stringify(message)
-        );
+        const callbacks = popoutWindow.chodeNetGodotCallbacks;
+        console.log('📤 [SEND] Sending to popout window via callbacks:', {
+          callbacks_exist: !!callbacks,
+          godot_function_exists: !!callbacks?.godotReceiveMessageFromParent,
+          message_type: message.type
+        });
+        
+        callbacks?.godotReceiveMessageFromParent?.(JSON.stringify(message));
+        
+        console.log('✅ [SEND] Message sent to popout game successfully:', {
+          message_type: message.type
+        });
       } catch (error) {
-        console.error('Error sending message to popout game:', error);
+        console.error('❌ [SEND] Error sending message to popout game:', {
+          error: error.message,
+          message_type: message.type,
+          stack: error.stack
+        });
       }
     }
 
-    console.log('📨 Message sent to game:', message);
+    // Validation check
+    if (isDocked && !gameIframeRef.current?.contentWindow) {
+      console.warn('⚠️ [SEND] Message not sent - docked but iframe not ready:', {
+        message_type: message.type,
+        iframe_exists: !!gameIframeRef.current
+      });
+    }
+    
+    if (!isDocked && (!popoutWindow || popoutWindow.closed)) {
+      console.warn('⚠️ [SEND] Message not sent - undocked but popout not ready:', {
+        message_type: message.type,
+        popout_exists: !!popoutWindow,
+        popout_closed: popoutWindow?.closed
+      });
+    }
   };
 
   // Toggle docked state
@@ -355,13 +562,145 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
               🔗 Dock to Oracle
             </button>
           </div>
-          <iframe src="${gameUrl}" onload="parent.postMessage({type:'popout_loaded'}, '*')"></iframe>
+          <iframe id="gameIframe" src="${gameUrl}" onload="handleGameLoad()"></iframe>
+          
+          <script>
+            console.log('[Undocked] 🚀 Oracle communication bridge initializing...');
+            
+            let gameIframe = null;
+            
+            // Current wallet state (synced from parent)
+            let currentWalletState = {
+              connected: false,
+              address: ''
+            };
+            
+            function handleGameLoad() {
+              gameIframe = document.getElementById('gameIframe');
+              console.log('[Undocked] 🎮 Game iframe loaded in undocked window');
+              
+              // Send current wallet state to game
+              sendWalletStatusToGame();
+              
+              // Test initial communication
+              setTimeout(() => {
+                sendMessageToGame({
+                  type: 'oracle_connection_test',
+                  payload: {
+                    message: 'Undocked Oracle window connected',
+                    timestamp: new Date().toISOString(),
+                    test_phase: 'undocked_connection'
+                  }
+                });
+              }, 1000);
+            }
+            
+            // Listen for wallet status updates from parent Oracle window
+            window.addEventListener('message', function(event) {
+              // Only accept messages from parent Oracle window
+              if (event.source !== window.opener) {
+                return;
+              }
+              
+              console.log('[Undocked] 📥 Received message from parent Oracle:', event.data);
+              
+              try {
+                const messageData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                
+                if (messageData.type === 'wallet_status_update') {
+                  console.log('[Undocked] 💰 Wallet status update received:', messageData);
+                  
+                  // Update local wallet state
+                  currentWalletState = {
+                    connected: messageData.connected || false,
+                    address: messageData.address || ''
+                  };
+                  
+                  // Forward to game
+                  sendWalletStatusToGame();
+                }
+                
+                // Forward other Oracle messages to game
+                else if (messageData.type && messageData.type.startsWith('oracle_')) {
+                  console.log('[Undocked] 🔮 Forwarding Oracle message to game:', messageData.type);
+                  sendMessageToGame(messageData);
+                }
+              } catch (error) {
+                console.error('[Undocked] ❌ Error processing parent message:', error);
+              }
+            });
+            
+            function sendWalletStatusToGame() {
+              if (!gameIframe || !gameIframe.contentWindow) {
+                console.warn('[Undocked] ⚠️ Game iframe not ready for wallet status');
+                return;
+              }
+              
+              const walletMessage = {
+                type: 'wallet_status_update',
+                connected: currentWalletState.connected,
+                address: currentWalletState.address,
+                timestamp: new Date().toISOString()
+              };
+              
+              console.log('[Undocked] 📤 Sending wallet status to game:', walletMessage);
+              
+              try {
+                gameIframe.contentWindow.postMessage(JSON.stringify(walletMessage), '*');
+                console.log('[Undocked] ✅ Wallet status sent to game successfully');
+              } catch (error) {
+                console.error('[Undocked] ❌ Failed to send wallet status to game:', error);
+              }
+            }
+            
+            function sendMessageToGame(message) {
+              if (!gameIframe || !gameIframe.contentWindow) {
+                console.warn('[Undocked] ⚠️ Game iframe not ready for message:', message.type);
+                return;
+              }
+              
+              try {
+                const messageJson = JSON.stringify(message);
+                gameIframe.contentWindow.postMessage(messageJson, '*');
+                console.log('[Undocked] ✅ Message sent to game:', message.type);
+              } catch (error) {
+                console.error('[Undocked] ❌ Failed to send message to game:', error);
+              }
+            }
+            
+            // Listen for messages from game iframe
+            window.addEventListener('message', function(event) {
+              // Only process messages from our game iframe
+              if (event.source !== gameIframe?.contentWindow) {
+                return;
+              }
+              
+              console.log('[Undocked] 📥 Received message from game:', event.data);
+              
+              // Forward game events to parent Oracle window
+              if (window.opener && !window.opener.closed) {
+                try {
+                  window.opener.postMessage(event.data, '*');
+                  console.log('[Undocked] 📤 Forwarded game message to parent Oracle');
+                } catch (error) {
+                  console.error('[Undocked] ❌ Failed to forward message to parent:', error);
+                }
+              }
+            });
+            
+            console.log('[Undocked] ✅ Oracle communication bridge ready');
+          </script>
         </body>
         </html>
       `);
 
       gameWindow.document.close();
       setPopoutWindow(gameWindow);
+
+      // Send initial wallet status to undocked window
+      setTimeout(() => {
+        sendWalletStatusToUndocked(gameWindow);
+      }, 2000);
 
       // Monitor window close
       const checkClosed = setInterval(() => {
@@ -401,44 +740,9 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
   const status = getConnectionDisplay();
 
-  // === EXPOSE Oracle testing functions via callback ===
-  useEffect(() => {
-    if (onOracleTest) {
-      // Provide the testing function to parent component
-      (window as any).testOracleConnection = testOracleConnection;
-    }
-  }, [onOracleTest, testOracleConnection]);
 
-  // === ADD Oracle testing button to debug panel ===
-  const renderDebugPanel = () => (
-    <div className="debug-panel">
-      <h4>🔧 Debug Panel</h4>
-      <div className="debug-controls">
-        <button 
-          className="debug-button"
-          onClick={testOracleConnection}
-        >
-          🔮 Test Oracle Communication
-        </button>
-        <button 
-          className="debug-button"
-          onClick={() => sendProphecyToGame({
-            title: 'Test Prophecy',
-            message: 'The Oracle speaks... This is a test prophecy message.',
-            icon: '🔮',
-            priority: 'medium'
-          })}
-        >
-          📜 Send Test Prophecy
-        </button>
-      </div>
-      <div className="debug-info">
-        <div>Connection: <span className={`status ${connectionStatus}`}>{connectionStatus}</span></div>
-        <div>Last Message: {lastMessage ? `${lastMessage.type} at ${lastMessage.timestamp.toLocaleTimeString()}` : 'None'}</div>
-        <div>Game State: {gameState.isLoaded ? 'Loaded' : 'Loading'}</div>
-      </div>
-    </div>
-  );
+
+
 
   return (
     <div 
@@ -501,8 +805,8 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
       {/* Docked Game Content */}
       {isDocked && (
-        <div className="game-content">
-          <div className="game-iframe-container">
+        <div className="game-content flex">
+          <div className="game-iframe-container flex-1">
             <iframe
               ref={gameIframeRef}
               src={gameUrl}
@@ -589,8 +893,6 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
           </div>
         </div>
       )}
-
-      {renderDebugPanel()}
     </div>
   );
 }; 

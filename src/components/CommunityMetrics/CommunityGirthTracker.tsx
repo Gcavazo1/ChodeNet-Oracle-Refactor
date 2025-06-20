@@ -320,12 +320,29 @@ export const CommunityGirthTracker: React.FC = () => {
     <div className="community-girth-tracker">
       {/* Main Community Metrics */}
       <div className="community-header">
+        {/* Centered title with eye icon */}
         <h2 className="title">
-          <span className="oracle-eye">👁️‍🗨️</span>
+          <img
+            src="/assets/eye.svg"
+            alt="Oracle Eye"
+            className="oracle-eye-svg"
+            draggable={false}
+          />
           COLLECTIVE GIRTH ACCUMULATION
         </h2>
+
+        {/* Bolt badge pinned to right */}
+        <img
+          src="/assets/powered_by_bolt.svg"
+          alt="Powered by Bolt.new"
+          className="bolt-badge"
+          draggable={false}
+        />
+
+        {/* Timestamp under badge (mobile friendly) */}
         <div className="last-updated">
-          Oracle Vision Updated: {new Date(communityStats?.lastUpdated || '').toLocaleTimeString()}
+          Oracle Vision Updated:{' '}
+          {new Date(communityStats?.lastUpdated || '').toLocaleTimeString()}
         </div>
       </div>
 

@@ -1,0 +1,417 @@
+/* Admin Panel Custom Styles */
+
+/* Custom slider for range inputs */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  background: #374151;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #3b82f6;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  border: 2px solid #1e40af;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #2563eb;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-track {
+  background: #374151;
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  background: #3b82f6;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  border: 2px solid #1e40af;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #2563eb;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+  transform: scale(1.1);
+}
+
+/* Admin specific animations */
+@keyframes admin-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.05);
+  }
+}
+
+.admin-pulse {
+  animation: admin-pulse 2s infinite;
+}
+
+/* Custom toggle button styles */
+.toggle-button {
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+}
+
+.toggle-button:hover {
+  filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.6));
+  transform: scale(1.05);
+}
+
+/* Status indicator styles */
+.status-good {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.status-fair {
+  background: linear-gradient(135deg, #92400e 0%, #d97706 100%);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.status-poor {
+  background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* Metrics card hover effects */
+.metrics-card {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metrics-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.metrics-card:hover::before {
+  left: 100%;
+}
+
+.metrics-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Configuration panel animations */
+@keyframes config-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.config-item {
+  animation: config-slide-in 0.3s ease forwards;
+}
+
+.config-item:nth-child(1) { animation-delay: 0.1s; }
+.config-item:nth-child(2) { animation-delay: 0.2s; }
+.config-item:nth-child(3) { animation-delay: 0.3s; }
+.config-item:nth-child(4) { animation-delay: 0.4s; }
+.config-item:nth-child(5) { animation-delay: 0.5s; }
+
+/* Action button hover effects */
+.action-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.action-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+}
+
+.action-button:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .metrics-card {
+    margin-bottom: 1rem;
+  }
+  
+  .config-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .toggle-button {
+    align-self: flex-end;
+  }
+}
+
+/* Dark mode enhancements */
+.admin-panel {
+  color-scheme: dark;
+}
+
+/* Scrollbar styling for admin panels */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.8);
+}
+
+/* Demo Data Control Enhancements */
+.demo-control-center {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  backdrop-filter: blur(20px);
+}
+
+.demo-status-indicator {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-status-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.2), transparent);
+  transition: left 0.8s ease;
+}
+
+.demo-status-indicator:hover::before {
+  left: 100%;
+}
+
+/* Component demo toggle animations */
+.component-demo-item {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.component-demo-item:hover {
+  transform: translateX(4px);
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.component-demo-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Demo injection button styles */
+.demo-injection-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.demo-injection-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.4s ease;
+}
+
+.demo-injection-button:hover::before {
+  width: 120%;
+  height: 120%;
+}
+
+.demo-injection-button:active {
+  transform: scale(0.95);
+}
+
+.demo-injection-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.demo-injection-button:disabled::before {
+  display: none;
+}
+
+/* Demo quality radio button styling */
+.demo-quality-option {
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.demo-quality-option:hover {
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.demo-quality-option input[type="radio"] {
+  accent-color: #a855f7;
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5));
+}
+
+/* Master demo switch enhancement */
+.master-demo-switch {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  transition: all 0.3s ease;
+}
+
+.master-demo-switch.active {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+/* Demo metrics animation */
+@keyframes demo-metric-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.02);
+  }
+}
+
+.demo-metric-active {
+  animation: demo-metric-pulse 3s infinite;
+}
+
+/* Quick action buttons */
+.quick-demo-action {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-demo-action::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.quick-demo-action:hover::after {
+  left: 100%;
+}
+
+.quick-demo-action:hover {
+  transform: translateY(-2px);
+}
+
+/* Demo mode badge */
+.demo-mode-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-mode-badge.active {
+  background: linear-gradient(45deg, #a855f7, #8b5cf6);
+  animation: demo-badge-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes demo-badge-glow {
+  from {
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 30px rgba(168, 85, 247, 0.3);
+  }
+}
+
+/* Component status dots */
+.component-status-dot {
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.component-status-dot.demo-active {
+  animation: demo-dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes demo-dot-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.2);
+  }
+}

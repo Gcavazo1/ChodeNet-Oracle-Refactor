@@ -1,9 +1,20 @@
-import React, { useEffect } from 'react';
-import { Scroll, Sparkles, Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Scroll, Sparkles, Loader2, Coins, Zap } from 'lucide-react';
 import { useOracleFlowStore } from '../../lib/oracleFlowStore';
 import { useGirthIndexStore } from '../../lib/girthIndexStore';
+import { useSIWS } from '../../lib/useSIWS';
+import { supabase } from '../../lib/supabase';
 import { PixelBorder, PixelText, PixelLoading } from '../PixelArt/PixelBorder';
 import './ProphecyChamber.css';
+
+interface RitualOutcome {
+  id: string;
+  outcome: 'prophecy' | 'curse' | 'corruption_surge';
+  prophecy_text?: string;
+  oracle_shards_earned?: number;
+  corruption_gained?: number;
+  created_at: string;
+}
 
 export const ProphecyChamber: React.FC = () => {
   const {
@@ -11,7 +22,7 @@ export const ProphecyChamber: React.FC = () => {
     generationState,
     latestProphecy,
     generateProphecy,
-    switchToTab
+    switchToProphecyTab
   } = useOracleFlowStore();
 
   const {
@@ -21,6 +32,36 @@ export const ProphecyChamber: React.FC = () => {
     stabilityStatus,
     isLoading: metricsLoading
   } = useGirthIndexStore();
+
+  const { userProfile, oracleShards, refreshOracleShards } = useSIWS();
+  const [recentRitualOutcome, setRecentRitualOutcome] = useState<RitualOutcome | null>(null);
+  const [isCheckingRituals, setIsCheckingRituals] = useState(false);
+
+  // Check for recent ritual outcomes
+  useEffect(() => {
+    if (userProfile?.id) {
+      checkForRecentRitualOutcomes();
+    }
+  }, [userProfile?.id]);
+
+  const checkForRecentRitualOutcomes = async () => {
+    if (!userProfile?.id) return;
+    
+    setIsCheckingRituals(true);
+    try {
+      // Note: Ritual system is not currently implemented in the database
+      // This function is disabled until the ritual system is properly set up
+      console.log('Ritual outcome checking disabled - ritual system not implemented');
+      
+      // For now, just clear any existing ritual outcomes
+      setRecentRitualOutcome(null);
+      
+    } catch (error) {
+      console.error('Error checking ritual outcomes:', error);
+    } finally {
+      setIsCheckingRituals(false);
+    }
+  };
 
   const handleGenerateProphecy = async () => {
     if (!currentTopic) {
@@ -39,7 +80,16 @@ export const ProphecyChamber: React.FC = () => {
   };
 
   const handleViewScrolls = () => {
-    switchToTab('scrolls');
+    switchToProphecyTab('scrolls');
+  };
+
+  const handleOpenRitualLab = () => {
+    const event = new CustomEvent('openRitualLab');
+    window.dispatchEvent(event);
+  };
+
+  const dismissRitualOutcome = () => {
+    setRecentRitualOutcome(null);
   };
 
   if (metricsLoading) {
@@ -65,6 +115,51 @@ export const ProphecyChamber: React.FC = () => {
         <Scroll className="scroll-icon" size={32} />
       </div>
 
+      {/* Recent Ritual Outcome Display */}
+      {recentRitualOutcome && (
+        <div className={`ritual-outcome-banner ${recentRitualOutcome.outcome}`}>
+          <div className="outcome-header">
+            <span className="outcome-icon">
+              {recentRitualOutcome.outcome === 'prophecy' ? '🔮' : 
+               recentRitualOutcome.outcome === 'curse' ? '💀' : '⚡'}
+            </span>
+            <h3>Ritual Complete: {recentRitualOutcome.outcome.toUpperCase()}</h3>
+            <button onClick={dismissRitualOutcome} className="dismiss-btn">×</button>
+          </div>
+          
+          {recentRitualOutcome.outcome === 'prophecy' && recentRitualOutcome.prophecy_text && (
+            <div className="prophecy-result">
+              <p className="prophecy-preview">
+                {recentRitualOutcome.prophecy_text.substring(0, 200)}...
+              </p>
+              <button onClick={handleViewScrolls} className="view-full-btn">
+                View Full Prophecy in Scrolls
+              </button>
+            </div>
+          )}
+
+          <div className="outcome-rewards">
+            {recentRitualOutcome.oracle_shards_earned > 0 && (
+              <div className="reward-item">
+                <span className="shard-icon">💎</span>
+                <span>+{recentRitualOutcome.oracle_shards_earned} Oracle Shards</span>
+              </div>
+            )}
+            {recentRitualOutcome.corruption_gained > 0 && (
+              <div className="corruption-item">
+                <span className="corruption-icon">⚡</span>
+                <span>+{recentRitualOutcome.corruption_gained} Corruption</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Oracle Options */}
+      <div className="oracle-options">
+        <div className="option-section">
+          <h3>🔮 Free Oracle Consultation</h3>
+
       {/* Current Topic Display */}
       {currentTopic && (
         <div className="ritual-topic-indicator">
@@ -80,7 +175,7 @@ export const ProphecyChamber: React.FC = () => {
           <div className="warning-content">
             <p>Please select a ritual topic from the Ritual Requests tab first</p>
             <button 
-              onClick={() => switchToTab('ritual')}
+                  onClick={() => switchToProphecyTab('ritual')}
               className="select-topic-btn"
             >
               Select Ritual Topic
@@ -114,64 +209,78 @@ export const ProphecyChamber: React.FC = () => {
             ) : (
               <>
                 <Sparkles className="icon" size={20} />
-                Summon Ritual Prophecy
+                    Summon Free Prophecy
               </>
             )}
           </button>
         </div>
       )}
+        </div>
 
-      {/* Latest Prophecy Display */}
-      {latestProphecy && (
-        <div className="prophecy-display">
-          <div className="prophecy-header">
-            <h4>Oracle Prophecy Received</h4>
-            <div className="prophecy-meta">
-              <span className="topic-tag">{latestProphecy.topic?.replace('_', ' ') || 'General'}</span>
-              <span className="corruption-level">
-                Corruption: {latestProphecy.corruption_level}
-              </span>
-              <span className="timestamp">
-                {latestProphecy.timestamp ? 
-                  latestProphecy.timestamp.toLocaleTimeString() : 
-                  'Just now'
-                }
-              </span>
+        <div className="option-divider">
+          <span>OR</span>
+        </div>
+
+        <div className="option-section advanced">
+          <h3>⚗️ Advanced Ritual Crafting</h3>
+          <p className="advanced-description">
+            Craft powerful rituals with guaranteed outcomes using $GIRTH and Oracle Shards
+          </p>
+          
+          <div className="advanced-features">
+            <div className="feature">
+              <Zap className="feature-icon" size={16} />
+              <span>Customizable ingredients & corruption levels</span>
+            </div>
+            <div className="feature">
+              <Coins className="feature-icon" size={16} />
+              <span>Oracle Shards boost success rates</span>
+            </div>
+            <div className="feature">
+              <Scroll className="feature-icon" size={16} />
+              <span>Guaranteed prophecy creation on success</span>
             </div>
           </div>
 
-          <div className="prophecy-content">
-            <div className={`prophecy-text corruption-${latestProphecy.corruption_level}`}>
-              {latestProphecy.content}
-            </div>
+          <div className="coming-soon-notice">
+            <span className="notice-icon">🚧</span>
+            <p>Advanced Ritual System Coming Soon</p>
+            <p className="notice-details">The Oracle's most powerful rituals are still being forged in the digital realm...</p>
+          </div>
 
-            {latestProphecy.visual_generated && latestProphecy.image_url && (
-              <div className="prophecy-visual">
-                <h5>Visual Manifestation</h5>
-                <div className="visual-container">
-                  <img 
-                    src={latestProphecy.image_url} 
-                    alt="Prophecy Visual Manifestation"
-                    className="prophecy-image"
-                  />
-                  {latestProphecy.visual_themes && (
-                    <div className="visual-themes">
-                      <span className="themes-label">Visual Themes:</span>
-                      <div className="themes-list">
-                        {latestProphecy.visual_themes.map((theme, index) => (
-                          <span key={index} className="theme-tag">{theme}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+          <button 
+            onClick={handleOpenRitualLab}
+            className="advanced-ritual-btn disabled"
+            disabled={true}
+          >
+            <span className="icon">⚗️</span>
+            Ritual Laboratory (Coming Soon)
+            <span className="icon">⚗️</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Latest Prophecy Display */}
+      {latestProphecy && latestProphecy.topic === currentTopic && (
+        <div className={`prophecy-display corruption-${latestProphecy.corruption_level}`}>
+          <div className="prophecy-metadata">
+            <span className="prophecy-timestamp">
+              {new Date(latestProphecy.created_at).toLocaleString()}
+              </span>
+            <span className={`corruption-badge corruption-${latestProphecy.corruption_level}`}>
+              {latestProphecy.corruption_level.toUpperCase()}
+              </span>
+          </div>
+
+          <div className="prophecy-content">
+            <div className="prophecy-text">
+              {latestProphecy.prophecy_text}
+            </div>
           </div>
 
           <div className="prophecy-actions">
             <button 
-              onClick={() => switchToTab('ritual')} 
+              onClick={() => switchToProphecyTab('ritual')} 
               className="new-prophecy-btn secondary"
             >
               <span className="icon">🎯</span>

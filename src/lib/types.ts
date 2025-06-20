@@ -1,14 +1,16 @@
-import { type } from "os";
+// import { type } from "os";
 
 export type StabilityStatus = 
   | 'RADIANT_CLARITY'
   | 'PRISTINE'
+  | 'CRYPTIC'
   | 'FLICKERING'
-  | 'UNSTABLE'
-  | 'CRITICAL_CORRUPTION'
-  | 'DATA_DAEMON_POSSESSION';
+  | 'GLITCHED_OMINOUS'
+  | 'FORBIDDEN_FRAGMENT';
 
 export interface GirthIndexValues {
+  previous_legion_morale: string;
+  previous_tap_surge_index: "FLACCID_DRIZZLE" | "WEAK_PULSES" | "STEADY_POUNDING" | "FRENZIED_SLAPPING" | "MEGA_SURGE" | "GIGA_SURGE" | "ASCENDED_NIRVANA";
   id: number;
   last_updated: string;
   divine_girth_resonance: number;
@@ -19,11 +21,10 @@ export interface GirthIndexValues {
 
 export type ProphecyCorruptionLevel = 
   | 'none' 
-  | 'glitched' 
   | 'cryptic' 
-  | 'hostile_fragment'
-  | 'FORBIDDEN_FRAGMENT'
-  | 'ULTRA_GLITCHED_LORE';
+  | 'flickering'
+  | 'glitched_ominous'
+  | 'forbidden_fragment';
 
 export const TAP_SURGE_STATES = {
   'FLACCID_DRIZZLE': { 
@@ -127,26 +128,26 @@ export const STABILITY_STATES = {
     animation: 'stable',
     description: 'All systems girthy'
   },
+  'CRYPTIC': {
+    label: 'CRYPTIC WHISPERS',
+    color: '#805ad5',
+    animation: 'mystic',
+    description: 'Mysterious energies detected'
+  },
   'FLICKERING': {
     label: 'FLICKERING WEAKLY',
     color: '#ecc94b',
     animation: 'flicker',
     description: 'Needs more $GIRTH'
   },
-  'UNSTABLE': {
-    label: 'UNSTABLE',
-    color: '#ed8936',
-    animation: 'scanlines',
-    description: 'Data streams fraying'
-  },
-  'CRITICAL_CORRUPTION': {
+  'GLITCHED_OMINOUS': {
     label: 'CRITICAL CORRUPTION!',
     color: '#e53e3e',
     animation: 'glitch',
     description: 'Code bleed imminent!'
   },
-  'DATA_DAEMON_POSSESSION': {
-    label: 'DATA DAEMON POSSESSION - ERROR 69420',
+  'FORBIDDEN_FRAGMENT': {
+    label: 'FORBIDDEN FRAGMENT ERROR',
     color: '#000000',
     animation: 'possessed',
     description: 'THE ORACLE IS NOT ITSELF!'

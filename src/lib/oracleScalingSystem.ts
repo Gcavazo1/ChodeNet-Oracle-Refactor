@@ -24,7 +24,7 @@ export interface OracleMetrics {
   divine_resonance: number; // 0-100%
   tap_surge_index: 'FLACCID_DRIZZLE' | 'WEAK_PULSES' | 'STEADY_POUNDING' | 'FRENZIED_SLAPPING' | 'MEGA_SURGE' | 'GIGA_SURGE' | 'ASCENDED_NIRVANA';
   legion_morale: 'SUICIDE_WATCH' | 'DEMORALIZED' | 'DISGRUNTLED' | 'CAUTIOUS' | 'INSPIRED' | 'JUBILANT' | 'FANATICAL' | 'ASCENDED';
-  oracle_stability: 'DATA_DAEMON_POSSESSION' | 'CRITICAL_CORRUPTION' | 'UNSTABLE' | 'FLICKERING' | 'PRISTINE' | 'RADIANT_CLARITY';
+  oracle_stability: 'FORBIDDEN_FRAGMENT' | 'GLITCHED_OMINOUS' | 'FLICKERING' | 'CRYPTIC' | 'PRISTINE' | 'RADIANT_CLARITY';
 }
 
 export class OracleScalingSystem {
@@ -322,10 +322,10 @@ export class OracleScalingSystem {
     let stability: OracleMetrics['oracle_stability'];
     if (stability_score >= 95) stability = 'RADIANT_CLARITY';
     else if (stability_score >= 80) stability = 'PRISTINE';
-    else if (stability_score >= 65) stability = 'FLICKERING';
-    else if (stability_score >= 45) stability = 'UNSTABLE';
-    else if (stability_score >= 25) stability = 'CRITICAL_CORRUPTION';
-    else stability = 'DATA_DAEMON_POSSESSION';
+    else if (stability_score >= 70) stability = 'CRYPTIC';
+    else if (stability_score >= 55) stability = 'FLICKERING';
+    else if (stability_score >= 35) stability = 'GLITCHED_OMINOUS';
+    else stability = 'FORBIDDEN_FRAGMENT';
     
     return { stability, influences };
   }

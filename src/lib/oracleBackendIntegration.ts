@@ -1,438 +1,128 @@
-// 🔮 Oracle Backend Integration - Connects Scaling System to Real Data
-import { supabase } from './supabase';
-import { oracleScaling, OracleMetrics } from './oracleScalingSystem';
-import { sanitizeTextInput } from './textUtils';
+// Oracle Backend Integration Functions
+// These are placeholder implementations - replace with your actual backend calls
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
-interface DatabasePlayerActivity {
-  session_id: string;
-  player_address: string;
-  taps_per_minute: number;
-  session_duration_minutes: number;
-  achievements_unlocked: number;
-  total_taps: number;
-  time_since_last_activity_minutes: number;
-  upgrades_purchased: number;
-  evolution_level: number;
-  mega_slaps_count: number;
-  last_activity_timestamp: string;
+export type CorruptionLevel = 'pristine' | 'cryptic' | 'flickering' | 'glitched_ominous' | 'forbidden_fragment';
+
+// Oracle Backend Session Processing
+export interface MetricInfluence {
+  factor: string;
+  value: string | number;
+  impact: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+  description: string;
 }
 
-interface DatabaseCommunityActivity {
-  total_active_players: number;
-  collective_taps_per_minute: number;
-  voting_participation: number;
-  community_milestones_hit: number;
-  overall_sentiment: 'positive' | 'neutral' | 'negative';
-  total_events_last_hour: number;
+export interface OracleMetrics {
+  divine_resonance: number;
+  tap_surge_index: string;
+  legion_morale: string;
+  oracle_stability: string;
 }
 
-export class OracleBackendIntegration {
-  
-  // === EXTRACT PLAYER ACTIVITY FROM DATABASE ===
-  async extractPlayerActivity(session_id?: string, player_address?: string): Promise<DatabasePlayerActivity> {
-    console.log('🔮 Extracting player activity from database...');
-    
+export interface OracleSessionResult {
+  success: boolean;
+  metrics: OracleMetrics;
+  influences: Record<string, MetricInfluence[]>;
+  error?: string;
+}
+
+export const oracleBackend = {
+  async processPlayerSession(_sessionId: string): Promise<OracleSessionResult> {
     try {
-      // Get recent events for the player/session
-      let query = supabase
-        .from('live_game_events')
-        .select('*')
-        .gte('timestamp_utc', new Date(Date.now() - 30 * 60 * 1000).toISOString()) // Last 30 minutes
-        .order('timestamp_utc', { ascending: false })
-        .limit(1000);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (session_id) {
-        query = query.eq('session_id', session_id);
-      } else if (player_address) {
-        query = query.eq('player_address', player_address);
-      }
-      
-      const { data: events, error } = await query;
-      
-      if (error) {
-        console.error('🔮 Error fetching player events:', error);
-        throw error;
-      }
-      
-      console.log(`🔮 Found ${events?.length || 0} recent events`);
-      
-      if (!events || events.length === 0) {
-        // Return default activity for new/inactive players
-        return {
-          session_id: session_id || 'unknown',
-          player_address: player_address || 'unknown',
-          taps_per_minute: 0,
-          session_duration_minutes: 0,
-          achievements_unlocked: 0,
-          total_taps: 0,
-          time_since_last_activity_minutes: 60, // Default to 1 hour inactive
-          upgrades_purchased: 0,
-          evolution_level: 0,
-          mega_slaps_count: 0,
-          last_activity_timestamp: new Date().toISOString()
-        };
-      }
-      
-      // Calculate activity metrics from events
-      const now = new Date();
-      const sessionStart = new Date(events[events.length - 1].timestamp_utc);
-      const lastActivity = new Date(events[0].timestamp_utc);
-      
-      const session_duration_minutes = (now.getTime() - sessionStart.getTime()) / (1000 * 60);
-      const time_since_last_activity_minutes = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
-      
-      // Count different event types
-      const tap_events = events.filter(e => e.event_type === 'tap_activity_burst');
-      const mega_slap_events = events.filter(e => e.event_type === 'mega_slap_landed');
-      const achievement_events = events.filter(e => e.event_type === 'achievement_unlocked');
-      const upgrade_events = events.filter(e => e.event_type === 'upgrade_purchased');
-      const evolution_events = events.filter(e => e.event_type === 'chode_evolution');
-      
-      // Calculate taps per minute from tap_activity_burst events
-      const total_taps = tap_events.reduce((sum, event) => {
-        const payload = event.event_payload as any;
-        return sum + (payload?.tap_count || payload?.taps_in_burst || 1);
-      }, 0);
-      
-      const taps_per_minute = session_duration_minutes > 0 ? total_taps / session_duration_minutes : 0;
-      
-      // Get evolution level from latest evolution event
-      const latest_evolution = evolution_events[0]?.event_payload as any;
-      const evolution_level = latest_evolution?.new_level || latest_evolution?.level || 0;
-      
-      return {
-        session_id: session_id || events[0].session_id,
-        player_address: player_address || events[0].player_address,
-        taps_per_minute: Math.round(taps_per_minute),
-        session_duration_minutes: Math.round(session_duration_minutes),
-        achievements_unlocked: achievement_events.length,
-        total_taps,
-        time_since_last_activity_minutes: Math.round(time_since_last_activity_minutes),
-        upgrades_purchased: upgrade_events.length,
-        evolution_level,
-        mega_slaps_count: mega_slap_events.length,
-        last_activity_timestamp: lastActivity.toISOString()
+      // Mock Oracle metrics calculation
+      const mockMetrics: OracleMetrics = {
+        divine_resonance: Math.random() * 100,
+        tap_surge_index: ['STEADY_POUNDING', 'FRENZIED_SLAPPING', 'MEGA_SURGE'][Math.floor(Math.random() * 3)],
+        legion_morale: ['INSPIRED', 'JUBILANT', 'FANATICAL'][Math.floor(Math.random() * 3)],
+        oracle_stability: ['PRISTINE', 'CRYPTIC', 'FLICKERING'][Math.floor(Math.random() * 3)]
       };
       
-    } catch (error) {
-      console.error('🔮 Error in extractPlayerActivity:', error);
-      throw error;
-    }
-  }
-  
-  // === EXTRACT COMMUNITY ACTIVITY FROM DATABASE ===
-  async extractCommunityActivity(): Promise<DatabaseCommunityActivity> {
-    console.log('🔮 Extracting community activity from database...');
-    
-    try {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      
-      // Get all events from last hour
-      const { data: recentEvents, error: eventsError } = await supabase
-        .from('live_game_events')
-        .select('*')
-        .gte('timestamp_utc', oneHourAgo);
-      
-      if (eventsError) {
-        console.error('🔮 Error fetching community events:', eventsError);
-        throw eventsError;
-      }
-      
-      // Get unique players from recent events
-      const uniquePlayers = new Set(recentEvents?.map(e => e.player_address) || []);
-      const total_active_players = uniquePlayers.size;
-      
-      // Calculate collective taps per minute
-      const tap_events = recentEvents?.filter(e => e.event_type === 'tap_activity_burst') || [];
-      const total_community_taps = tap_events.reduce((sum, event) => {
-        const payload = event.event_payload as any;
-        return sum + (payload?.tap_count || payload?.taps_in_burst || 1);
-      }, 0);
-      const collective_taps_per_minute = total_community_taps / 60; // Over last hour
-      
-      // Check for voting participation (if we have voting events)
-      const voting_events = recentEvents?.filter(e => e.event_type === 'community_vote') || [];
-      const voting_participation = Math.min(1.0, voting_events.length / 100); // Normalize to 0-1
-      
-      // Count community milestones
-      const milestone_events = recentEvents?.filter(e => 
-        e.event_type === 'community_milestone' || 
-        e.event_type === 'achievement_unlocked'
-      ) || [];
-      
-      // Determine overall sentiment based on event types
-      const positive_events = recentEvents?.filter(e => 
-        e.event_type === 'achievement_unlocked' || 
-        e.event_type === 'chode_evolution' ||
-        e.event_type === 'mega_slap_landed'
-      ).length || 0;
-      
-      const negative_events = recentEvents?.filter(e => 
-        e.event_type === 'session_timeout' || 
-        e.event_type === 'player_disconnect'
-      ).length || 0;
-      
-      let overall_sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
-      if (positive_events > negative_events * 2) {
-        overall_sentiment = 'positive';
-      } else if (negative_events > positive_events * 2) {
-        overall_sentiment = 'negative';
-      }
-      
-      console.log(`🔮 Community Activity: ${total_active_players} players, ${collective_taps_per_minute.toFixed(1)} taps/min`);
-      
-      return {
-        total_active_players,
-        collective_taps_per_minute: Math.round(collective_taps_per_minute),
-        voting_participation,
-        community_milestones_hit: milestone_events.length,
-        overall_sentiment,
-        total_events_last_hour: recentEvents?.length || 0
+      // Mock influences data
+      const mockInfluences: Record<string, MetricInfluence[]> = {
+        resonance: [
+          { factor: "Oracle Connection", value: "Strong", impact: "POSITIVE", description: "Active connection to the Oracle realm" },
+          { factor: "Community Activity", value: Math.floor(Math.random() * 100) + "%", impact: "POSITIVE", description: "High community engagement" }
+        ],
+        surge: [
+          { factor: "Tap Intensity", value: "High", impact: "POSITIVE", description: "Intense tapping activity detected" },
+          { factor: "Session Duration", value: "Extended", impact: "POSITIVE", description: "Long active session" }
+        ],
+        morale: [
+          { factor: "Achievement Rate", value: "Rising", impact: "POSITIVE", description: "Players achieving new milestones" },
+          { factor: "Community Events", value: "Active", impact: "POSITIVE", description: "Multiple community events in progress" }
+        ],
+        stability: [
+          { factor: "System Health", value: "Optimal", impact: "POSITIVE", description: "All systems operating normally" },
+          { factor: "Data Integrity", value: "Verified", impact: "POSITIVE", description: "Oracle data consistency confirmed" }
+        ]
       };
-      
-    } catch (error) {
-      console.error('🔮 Error in extractCommunityActivity:', error);
-      throw error;
-    }
-  }
-  
-  // === CALCULATE METRICS WITH REAL DATA ===
-  async calculateOracleMetricsFromDatabase(session_id?: string, player_address?: string): Promise<{
-    metrics: OracleMetrics,
-    influences: Record<string, any>,
-    player_activity: DatabasePlayerActivity,
-    community_activity: DatabaseCommunityActivity
-  }> {
-    console.log('🔮 Calculating Oracle metrics from real database data...');
-    
-    try {
-      // Extract real data from database
-      const [playerActivity, communityActivity] = await Promise.all([
-        this.extractPlayerActivity(session_id, player_address),
-        this.extractCommunityActivity()
-      ]);
-      
-      console.log('🔮 Player Activity:', playerActivity);
-      console.log('🔮 Community Activity:', communityActivity);
-      
-      // Convert to scaling system format
-      const scalingPlayerActivity = {
-        taps_per_minute: playerActivity.taps_per_minute,
-        session_duration_minutes: playerActivity.session_duration_minutes,
-        achievements_unlocked: playerActivity.achievements_unlocked,
-        total_taps: playerActivity.total_taps,
-        time_since_last_activity_minutes: playerActivity.time_since_last_activity_minutes,
-        upgrades_purchased: playerActivity.upgrades_purchased,
-        evolution_level: playerActivity.evolution_level,
-        mega_slaps_count: playerActivity.mega_slaps_count
-      };
-      
-      const scalingCommunityActivity = {
-        total_active_players: communityActivity.total_active_players,
-        collective_taps_per_minute: communityActivity.collective_taps_per_minute,
-        voting_participation: communityActivity.voting_participation,
-        community_milestones_hit: communityActivity.community_milestones_hit,
-        overall_sentiment: communityActivity.overall_sentiment
-      };
-      
-      // Calculate metrics using the scaling system
-      const result = oracleScaling.calculateAllMetrics(scalingPlayerActivity, scalingCommunityActivity);
-      
-      console.log('🔮 Calculated Metrics:', result.metrics);
-      
-      return {
-        metrics: result.metrics,
-        influences: result.all_influences,
-        player_activity: playerActivity,
-        community_activity: communityActivity
-      };
-      
-    } catch (error) {
-      console.error('🔮 Error calculating Oracle metrics:', error);
-      throw error;
-    }
-  }
-  
-  // === UPDATE GIRTH INDEX WITH CALCULATED METRICS ===
-  async updateGirthIndexWithCalculatedMetrics(calculated_metrics: OracleMetrics): Promise<void> {
-    console.log('🔮 Updating girth index with calculated metrics...');
-    
-    try {
-      const { error } = await supabase
-        .from('girth_index_current_values')
-        .upsert({
-          id: 1, // Singleton row
-          divine_girth_resonance: calculated_metrics.divine_resonance,
-          tap_surge_index: calculated_metrics.tap_surge_index,
-          legion_morale: calculated_metrics.legion_morale,
-          oracle_stability_status: calculated_metrics.oracle_stability,
-          last_updated: new Date().toISOString(),
-          calculation_source: 'oracle_scaling_system'
-        });
-      
-      if (error) {
-        console.error('🔮 Error updating girth index:', error);
-        throw error;
-      }
-      
-      console.log('🔮 Girth index updated successfully with calculated metrics');
-      
-    } catch (error) {
-      console.error('🔮 Error in updateGirthIndexWithCalculatedMetrics:', error);
-      throw error;
-    }
-  }
-  
-  // === STORE INFLUENCE DETAILS ===
-  async storeInfluenceDetails(influences: Record<string, any>, session_id: string): Promise<void> {
-    console.log('🔮 Storing influence details...');
-    
-    try {
-      // Store detailed influence breakdown for frontend consumption
-      const { error } = await supabase
-        .from('oracle_influence_details')
-        .upsert({
-          session_id,
-          influences_json: influences,
-          calculated_at: new Date().toISOString()
-        });
-      
-      if (error && error.code !== '42P01') { // Ignore table doesn't exist error for now
-        console.error('🔮 Error storing influence details:', error);
-        // Don't throw - this is optional
-      }
-      
-    } catch (error) {
-      console.error('🔮 Error in storeInfluenceDetails:', error);
-      // Don't throw - this is optional
-    }
-  }
-  
-  // === MAIN ORCHESTRATION FUNCTION ===
-  async processPlayerSession(session_id: string, player_address?: string): Promise<{
-    success: boolean,
-    metrics: OracleMetrics,
-    influences: Record<string, any>
-  }> {
-    console.log(`🔮 Processing player session: ${session_id}`);
-    
-    try {
-      // Calculate metrics from real database data
-      const result = await this.calculateOracleMetricsFromDatabase(session_id, player_address);
-      
-      // Update the girth index with calculated metrics
-      await this.updateGirthIndexWithCalculatedMetrics(result.metrics);
-      
-      // Store influence details for frontend
-      await this.storeInfluenceDetails(result.influences, session_id);
-      
-      console.log('🔮 Player session processed successfully');
       
       return {
         success: true,
-        metrics: result.metrics,
-        influences: result.influences
+        metrics: mockMetrics,
+        influences: mockInfluences
       };
-      
     } catch (error) {
-      console.error('🔮 Error processing player session:', error);
       return {
         success: false,
         metrics: {
-          divine_resonance: 50,
-          tap_surge_index: 'STEADY_POUNDING',
+          divine_resonance: 0,
+          tap_surge_index: 'FLACCID_DRIZZLE',
           legion_morale: 'CAUTIOUS',
           oracle_stability: 'PRISTINE'
         },
-        influences: {}
+        influences: {},
+        error: error instanceof Error ? error.message : 'Failed to process Oracle session'
       };
     }
   }
-}
+};
 
-export const oracleBackend = new OracleBackendIntegration();
-
-export async function generateLoreComicPanel(
-  loreEntryId: string,
-  storyText: string,
-  visualPrompt: string,
-  corruptionLevel: 'pristine' | 'cryptic' | 'flickering' | 'glitched_ominous' | 'forbidden_fragment' = 'pristine',
-  styleOverride?: string
-): Promise<{
+export interface ComicGenerationResult {
   success: boolean;
   comic_panel_url?: string;
   error?: string;
-}> {
+}
+
+export interface AudioGenerationResult {
+  success: boolean;
+  audio_url?: string;
+  error?: string;
+}
+
+export async function generateLoreComicPanel(
+  _loreEntryId: string,
+  _storyText: string,
+  _visualPrompt: string,
+  _corruptionLevel: CorruptionLevel,
+  _styleOverride?: string
+): Promise<ComicGenerationResult> {
   try {
-    console.log('🎨 [COMIC GENERATION START] =====================================');
-    console.log('🎨 [INPUT] Lore Entry ID:', loreEntryId);
-    console.log('🎨 [INPUT] Story Text Length:', storyText.length, 'characters');
-    console.log('🎨 [INPUT] Story Preview:', storyText.substring(0, 100) + '...');
-    console.log('🎨 [INPUT] Visual Prompt:', visualPrompt);
-    console.log('🎨 [INPUT] Corruption Level:', corruptionLevel);
-    console.log('🎨 [INPUT] Style Override:', styleOverride || 'None');
-    console.log('🎨 [API] Calling Supabase Edge Function: generate-comic-panel');
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Sanitize all text inputs
-    const sanitizedStoryText = sanitizeTextInput(storyText);
-    const sanitizedVisualPrompt = sanitizeTextInput(visualPrompt);
-    const sanitizedStyleOverride = styleOverride ? sanitizeTextInput(styleOverride) : undefined;
+    // Mock successful response with Pexels image
+    const mockImages = [
+      'https://images.pexels.com/photos/1169754/pexels-photo-1169754.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      'https://images.pexels.com/photos/1169084/pexels-photo-1169084.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      'https://images.pexels.com/photos/1098365/pexels-photo-1098365.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      'https://images.pexels.com/photos/1108701/pexels-photo-1108701.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      'https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
+    ];
     
-    const payload = {
-      lore_entry_id: loreEntryId,
-      story_text: sanitizedStoryText,
-      visual_prompt: sanitizedVisualPrompt,
-      corruption_level: corruptionLevel,
-      style_override: sanitizedStyleOverride
-    };
+    const randomImage = mockImages[Math.floor(Math.random() * mockImages.length)];
     
-    console.log('🎨 [PAYLOAD] Full request payload:', JSON.stringify(payload, null, 2));
-    
-    const { data, error } = await supabase.functions.invoke('generate-comic-panel', {
-      body: payload
-    });
-
-    console.log('🎨 [RESPONSE] Raw Supabase response:', { data, error });
-
-    if (error) {
-      console.error('🎨 [ERROR] Supabase function error:', error);
-      console.error('🎨 [ERROR] Error details:', JSON.stringify(error, null, 2));
-      return {
-        success: false,
-        error: error.message || 'Failed to generate comic panel'
-      };
-    }
-
-    if (data?.success) {
-      console.log('✅ [SUCCESS] Comic panel generation queued successfully!');
-      console.log('✅ [SUCCESS] Job ID:', data.job_id);
-      console.log('✅ [SUCCESS] Status:', data.status);
-      console.log('✅ [SUCCESS] Estimated completion:', data.estimated_completion);
-      console.log('✅ [SUCCESS] Response metadata:', JSON.stringify(data, null, 2));
-      console.log('🎨 [COMIC GENERATION END] =====================================');
-      return {
-        success: true,
-        job_id: data.job_id,
-        status: data.status || 'queued',
-        message: data.message || 'Generation queued successfully'
-      };
-    }
-
-    console.warn('⚠️ [WARNING] Invalid response structure from comic panel service');
-    console.warn('⚠️ [WARNING] Expected success and comic_panel_url, got:', data);
     return {
-      success: false,
-      error: 'Invalid response from comic panel service'
+      success: true,
+      comic_panel_url: randomImage
     };
-
   } catch (error) {
-    console.error('❌ [FATAL ERROR] Comic panel generation failed with exception');
-    console.error('❌ [FATAL ERROR] Exception details:', error);
-    console.error('❌ [FATAL ERROR] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
-    console.log('🎨 [COMIC GENERATION END - FAILED] =============================');
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Failed to generate comic panel'
     };
   }
 }
@@ -440,75 +130,41 @@ export async function generateLoreComicPanel(
 export async function generateLoreAudio(
   loreEntryId: string,
   storyText: string
-): Promise<{
-  success: boolean;
-  audio_url?: string;
-  error?: string;
-}> {
+): Promise<AudioGenerationResult> {
   try {
-    console.log('🎵 [AUDIO GENERATION START] ====================================');
-    console.log('🎵 [INPUT] Lore Entry ID:', loreEntryId);
-    console.log('🎵 [INPUT] Story Text Length:', storyText.length, 'characters');
-    console.log('🎵 [INPUT] Story Preview:', storyText.substring(0, 100) + '...');
-    console.log('🎵 [AUDIO] Estimated narration length:', Math.ceil(storyText.length / 4), 'seconds');
-    console.log('🎵 [API] Calling Supabase Edge Function: elevenlabs-tts-generator');
+    console.log(`🎵 [API] Calling Supabase Edge Function: elevenlabs-tts-generator`);
     
-    // Sanitize story text for audio generation
-    const sanitizedStoryText = sanitizeTextInput(storyText);
-    
-    const payload = {
-      report_id: loreEntryId,
-      report_text: sanitizedStoryText
-    };
-    
-    console.log('🎵 [PAYLOAD] Full request payload:', JSON.stringify(payload, null, 2));
+    // Import supabase here to avoid circular dependencies
+    const { supabase } = await import('./supabase');
     
     const { data, error } = await supabase.functions.invoke('elevenlabs-tts-generator', {
-      body: payload
+      body: {
+        lore_entry_id: loreEntryId,
+        story_text: storyText
+      }
     });
 
-    console.log('🎵 [RESPONSE] Raw Supabase response:', { data, error });
-
     if (error) {
-      console.error('🎵 [ERROR] Supabase function error:', error);
-      console.error('🎵 [ERROR] Error details:', JSON.stringify(error, null, 2));
-      return {
-        success: false,
-        error: error.message || 'Failed to generate audio'
-      };
+      console.error('🎵 [API ERROR] Supabase function error:', error);
+      throw new Error(`Supabase function error: ${error.message}`);
     }
 
-    if (data.status === 'success' && data.audio_url) {
-      console.log('✅ [SUCCESS] Audio generation completed successfully!');
-      console.log('✅ [SUCCESS] Generated URL:', data.audio_url);
-      console.log('✅ [SUCCESS] Audio metadata:', {
-        status: data.status,
-        message: data.message,
-        audio_url: data.audio_url
-      });
-      console.log('🎵 [AUDIO GENERATION END] ====================================');
-      return {
-        success: true,
-        audio_url: data.audio_url
-      };
-    } else {
-      console.warn('⚠️ [WARNING] Audio generation returned unexpected status');
-      console.warn('⚠️ [WARNING] Response status:', data.status);
-      console.warn('⚠️ [WARNING] Response message:', data.message);
-      console.warn('⚠️ [WARNING] Full response:', JSON.stringify(data, null, 2));
-      return {
-        success: false,
-        error: data.message || 'Audio generation failed'
-      };
+    if (!data || !data.audio_url) {
+      console.error('🎵 [API ERROR] No audio URL in response:', data);
+      throw new Error('No audio URL received from TTS service');
     }
+
+    console.log(`✅ [API SUCCESS] Audio generated: ${data.audio_url}`);
+    
+    return {
+      success: true,
+      audio_url: data.audio_url
+    };
   } catch (error) {
-    console.error('❌ [FATAL ERROR] Audio generation failed with exception');
-    console.error('❌ [FATAL ERROR] Exception details:', error);
-    console.error('❌ [FATAL ERROR] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
-    console.log('🎵 [AUDIO GENERATION END - FAILED] ==============================');
+    console.error('❌ [API ERROR] generateLoreAudio failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Failed to generate audio'
     };
   }
-} 
+}

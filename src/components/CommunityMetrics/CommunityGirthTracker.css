@@ -95,10 +95,46 @@
 
 /* Header */
 .community-header {
-  text-align: center;
+  position: relative;
   margin-bottom: 32px;
   border-bottom: 1px solid rgba(0, 255, 255, 0.3);
   padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.oracle-eye-svg {
+  width: 120px;
+  height: 120px;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8));
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bolt-badge {
+  position: absolute;
+  right: 12px;
+  top: -10px;
+  height: 128px;
+  width: auto;
+  opacity: 0.7;
+}
+
+.bolt-badge:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .title {
@@ -107,29 +143,12 @@
   margin: 0 0 8px 0;
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
   animation: textGlow 3s ease-in-out infinite alternate;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
-.oracle-eye {
-  font-size: 28px;
-  margin-right: 12px;
-  animation: blink 4s infinite;
-}
-
-@keyframes blink {
-  0%, 90%, 100% { opacity: 1; }
-  95% { opacity: 0.3; }
-}
-
-@keyframes textGlow {
-  from { text-shadow: 0 0 10px rgba(0, 255, 255, 0.8); }
-  to { text-shadow: 0 0 20px rgba(0, 255, 255, 1), 0 0 30px rgba(0, 255, 255, 0.5); }
-}
-
-.last-updated {
-  font-size: 12px;
-  color: rgba(0, 255, 255, 0.7);
-  font-style: italic;
-}
+/* Removed .oracle-eye blink effect (legacy) */
 
 /* Total Taps Display */
 .total-taps-display {
@@ -292,7 +311,7 @@
 }
 
 .stat-icon {
-  font-size: 24px;
+  font-size: 44px;
   display: block;
   margin-bottom: 8px;
 }
@@ -478,4 +497,13 @@
   .community-girth-tracker {
     background: linear-gradient(135deg, #000000 0%, #1a0a1a 100%);
   }
+}
+
+.last-updated {
+  position: absolute;
+  left: 12px;
+  top: 52px;
+  font-size: 12px;
+  color: rgba(0, 255, 255, 0.7);
+  font-style: italic;
 } 

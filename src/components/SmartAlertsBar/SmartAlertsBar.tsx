@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { smartAlertsService } from '../../lib/smartAlertsService';
+import { smartAlertsNavigation } from '../../lib/smartAlertsNavigation';
 import './SmartAlertsBar.css';
 
 export interface Alert {
   id: string;
+  source?: string; // 'oracle', 'community', 'game', 'lore'
   type: 'prophecy' | 'poll' | 'milestone' | 'glitch' | 'community' | 'system';
   title: string;
   message: string;
@@ -12,6 +15,7 @@ export interface Alert {
   dismissible?: boolean;
   autoHide?: boolean;
   hideAfter?: number; // milliseconds
+  metadata?: Record<string, any>; // Additional data for navigation
 }
 
 interface SmartAlertsBarProps {
@@ -21,6 +25,7 @@ interface SmartAlertsBarProps {
   maxVisibleAlerts?: number;
   onAlertDismiss?: (alertId: string) => void;
   onAlertClick?: (alert: Alert) => void;
+  useBackendData?: boolean; // Override admin settings if needed
 }
 
 export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
@@ -29,17 +34,20 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
   scrollInterval = 5000,
   maxVisibleAlerts = 3,
   onAlertDismiss,
-  onAlertClick
+  onAlertClick,
+  useBackendData
 }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [adminConfig, setAdminConfig] = useState(smartAlertsService.getConfig());
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Demo alerts for testing
   const demoAlerts: Alert[] = [
     {
       id: '1',
+      source: 'oracle',
       type: 'prophecy',
       title: 'Prophecy Born',
       message: 'The Oracle whispers of ascending girth...',
@@ -47,10 +55,15 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
       priority: 'high',
       timestamp: new Date(),
       dismissible: true,
-      autoHide: false
+      autoHide: false,
+      metadata: {
+        prophecyId: 'demo_prophecy_1',
+        corruption: 'flickering'
+      }
     },
     {
       id: '2',
+      source: 'community',
       type: 'poll',
       title: 'Poll Ending Soon',
       message: 'Community vote closes in 2 hours - "Choose the Next Ritual"',
@@ -58,33 +71,47 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
       priority: 'medium',
       timestamp: new Date(Date.now() - 300000),
       dismissible: true,
-      autoHide: false
+      autoHide: false,
+      metadata: {
+        pollId: 'demo_poll_ritual_choice'
+      }
     },
     {
       id: '3',
+      source: 'oracle',
       type: 'milestone',
-      title: 'Milestone Reached',
-      message: 'Community achieved 500K total taps! $GIRTH flows eternal!',
-      icon: '💰',
+      title: 'Legendary Event',
+      message: 'Player unleashed a Giga Slap of cosmic proportions!',
+      icon: '💥',
       priority: 'high',
       timestamp: new Date(Date.now() - 600000),
       dismissible: true,
-      autoHide: false
+      autoHide: false,
+      metadata: {
+        eventType: 'giga_slap_burst',
+        eventId: 'legendary_12345'
+      }
     },
     {
       id: '4',
+      source: 'oracle',
       type: 'glitch',
-      title: 'Glitch Event',
+      title: 'Corruption Alert',
       message: 'Reality fractures... forbidden fragments detected in data stream',
       icon: '⚡',
       priority: 'critical',
       timestamp: new Date(Date.now() - 900000),
       dismissible: false,
       autoHide: true,
-      hideAfter: 8000
+      hideAfter: 8000,
+      metadata: {
+        corruption: 'forbidden_fragment',
+        prophecyId: 'corrupted_prophecy_1'
+      }
     },
     {
       id: '5',
+      source: 'community',
       type: 'community',
       title: 'New Player Evolved',
       message: 'Player 0xG1RTH...420 ascended to Chode Master tier!',
@@ -92,7 +119,11 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
       priority: 'low',
       timestamp: new Date(Date.now() - 1200000),
       dismissible: true,
-      autoHide: false
+      autoHide: false,
+      metadata: {
+        playerId: '0xG1RTH420',
+        tier: 'chode_master'
+      }
     },
     {
       id: '6',
@@ -107,18 +138,71 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
     }
   ];
 
-  // Initialize alerts (use demo alerts if no external alerts provided)
+  // Initialize alerts system
   useEffect(() => {
-    const initialAlerts = externalAlerts.length > 0 ? externalAlerts : demoAlerts;
-    // Sort by priority and timestamp
-    const sortedAlerts = [...initialAlerts].sort((a, b) => {
+    // Determine if we should use backend data
+    const shouldUseBackend = useBackendData !== undefined 
+      ? useBackendData 
+      : adminConfig.realTimeEnabled && !adminConfig.demoMode;
+
+    console.log('🚨 SmartAlertsBar initializing:', {
+      shouldUseBackend,
+      demoMode: adminConfig.demoMode,
+      realTimeEnabled: adminConfig.realTimeEnabled,
+      externalAlertsCount: externalAlerts.length,
+      useBackendDataProp: useBackendData,
+      adminConfigFull: adminConfig
+    });
+
+    if (shouldUseBackend) {
+      // Use backend alerts from smartAlertsService
+      const handleBackendAlerts = (backendAlerts: Alert[]) => {
+        // Merge with external alerts if any
+        const combinedAlerts = [...backendAlerts, ...externalAlerts];
+        const sortedAlerts = sortAlerts(combinedAlerts);
+        setAlerts(sortedAlerts);
+      };
+
+      smartAlertsService.onAlertsUpdate(handleBackendAlerts);
+
+      return () => {
+        smartAlertsService.offAlertsUpdate(handleBackendAlerts);
+      };
+    } else if (adminConfig.demoMode || externalAlerts.length === 0) {
+      // Use demo alerts
+      const sortedAlerts = sortAlerts([...demoAlerts, ...externalAlerts]);
+      setAlerts(sortedAlerts);
+    } else {
+      // Use only external alerts
+      const sortedAlerts = sortAlerts(externalAlerts);
+      setAlerts(sortedAlerts);
+    }
+  }, [externalAlerts, adminConfig, useBackendData]);
+
+  // Listen for admin config changes
+  useEffect(() => {
+    const handleConfigUpdate = (event: CustomEvent) => {
+      setAdminConfig(event.detail);
+    };
+
+    window.addEventListener('adminConfigUpdated', handleConfigUpdate as EventListener);
+    window.addEventListener('smartAlertsConfigUpdated', handleConfigUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('adminConfigUpdated', handleConfigUpdate as EventListener);
+      window.removeEventListener('smartAlertsConfigUpdated', handleConfigUpdate as EventListener);
+    };
+  }, []);
+
+  // Helper function to sort alerts
+  const sortAlerts = (alertsToSort: Alert[]): Alert[] => {
+    return [...alertsToSort].sort((a, b) => {
       const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
       if (priorityDiff !== 0) return priorityDiff;
       return b.timestamp.getTime() - a.timestamp.getTime();
     });
-    setAlerts(sortedAlerts);
-  }, [externalAlerts]);
+  };
 
   // Auto-hide alerts
   useEffect(() => {
@@ -157,10 +241,25 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
 
   const handleDismissAlert = (alertId: string) => {
     setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+    // Also remove from backend service if it's managing alerts
+    if (adminConfig.realTimeEnabled && !adminConfig.demoMode) {
+      smartAlertsService.removeAlert(alertId);
+    }
     onAlertDismiss?.(alertId);
   };
 
-  const handleAlertClick = (alert: Alert) => {
+  const handleAlertClick = (alert: Alert, event?: React.MouseEvent) => {
+    // Prevent event propagation if we have a dismiss button click
+    if (event && (event.target as HTMLElement).classList.contains('alert-dismiss')) {
+      return;
+    }
+    
+    // Check if alert is clickable and handle navigation
+    if (smartAlertsNavigation.isAlertClickable(alert)) {
+      smartAlertsNavigation.handleAlertClick(alert);
+    }
+    
+    // Call external click handler if provided
     onAlertClick?.(alert);
   };
 
@@ -194,6 +293,10 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
     }
   };
 
+  const getAlertCursor = (alert: Alert): string => {
+    return smartAlertsNavigation.isAlertClickable(alert) ? 'pointer' : 'default';
+  };
+
   const visibleAlerts = alerts.slice(currentIndex, currentIndex + maxVisibleAlerts);
   const remainingCount = Math.max(0, alerts.length - (currentIndex + maxVisibleAlerts));
 
@@ -218,8 +321,10 @@ export const SmartAlertsBar: React.FC<SmartAlertsBarProps> = ({
         {visibleAlerts.map((alert, index) => (
           <div
             key={alert.id}
-            className={`alert-card ${getAlertTypeClass(alert.type)} ${getPriorityClass(alert.priority)}`}
-            onClick={() => handleAlertClick(alert)}
+            className={`alert-card ${getAlertTypeClass(alert.type)} ${getPriorityClass(alert.priority)} ${smartAlertsNavigation.isAlertClickable(alert) ? 'clickable' : ''}`}
+            style={{ cursor: getAlertCursor(alert) }}
+            onClick={(event) => handleAlertClick(alert, event)}
+            title={smartAlertsNavigation.isAlertClickable(alert) ? smartAlertsNavigation.getNavigationDescription(alert) : alert.title}
           >
             <div className="alert-icon">
               {alert.icon}

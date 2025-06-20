@@ -34,7 +34,10 @@ Deno.serve(async (req: Request) => {
     );
 
     const requestData: ComicPanelRequest = await req.json();
-    const { lore_entry_id, story_text, visual_prompt, corruption_level, style_override } = requestData;
+    let { lore_entry_id, story_text, visual_prompt, corruption_level, style_override } = requestData;
+
+    // 🔒 Safety – normalize corruption level to underscore naming
+    corruption_level = normalizeCorruptionLevel(corruption_level);
 
     console.log(`🎨 Queuing comic panel generation for lore entry: ${lore_entry_id}`);
 
@@ -349,4 +352,29 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   
   const byteArray = new Uint8Array(byteNumbers);
   return new Blob([byteArray], { type: mimeType });
+}
+
+// Helper to normalize corruption names to underscore style used in DB & SD
+function normalizeCorruptionLevel(level: string): 'pristine' | 'cryptic' | 'flickering' | 'glitched_ominous' | 'forbidden_fragment' {
+  if (!level) return 'pristine';
+  
+  const l = level.toLowerCase();
+  
+  // Standard mapping for non-standard corruption levels
+  if (l === 'unstable') return 'flickering';
+  if (l === 'radiant_clarity' || l === 'radiantclarity' || l === 'radiant-clarity') return 'pristine';
+  if (l === 'critical_corruption' || l === 'criticalcorruption' || l === 'critical-corruption') return 'glitched_ominous';
+  if (l === 'data_daemon_possession' || l === 'datadaemonpossession' || l === 'data-daemon-possession') return 'forbidden_fragment';
+  
+  // Handle camelCase and other formats
+  if (l === 'glitchedominous' || l === 'glitched-ominous') return 'glitched_ominous';
+  if (l === 'forbiddenfragment' || l === 'forbidden-fragment') return 'forbidden_fragment';
+  
+  // If it's already a standard value, return it
+  if (['pristine', 'cryptic', 'flickering', 'glitched_ominous', 'forbidden_fragment'].includes(l)) {
+    return l as any;
+  }
+  
+  // Default to pristine for unknown values
+  return 'pristine';
 }

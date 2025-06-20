@@ -2,14 +2,49 @@
 // The living bridge between game events and Oracle consciousness
 // Processes every tap, every achievement, every moment in real-time
 
-import { ChodeOracleEngine, GameEvent, OracleNotification } from './chodeOracleEngine';
+import { ChodeOracleEngine } from './chodeOracleEngine';
+import { smartAlertsService } from './smartAlertsService';
+
+// Define proper event payload type
+export interface EventPayload {
+  current_girth?: number;
+  total_girth?: number;
+  slap_power_girth?: number;
+  tap_count?: number;
+  corruption_level?: number;
+  oracle_significance?: string;
+  slap_streak?: number;
+  giga_slap_streak?: number;
+  [key: string]: unknown; // Allow additional properties
+}
+
+// Define missing interfaces locally until chodeOracleEngine exports them
+export interface GameEvent {
+  event_type: string;
+  timestamp_utc: string;
+  player_address?: string;
+  event_payload?: EventPayload;
+  corruption_level?: number;
+  community_significance?: number;
+}
+
+export interface OracleNotification {
+  title: string;
+  message: string;
+  type?: 'personal_vision' | 'community_milestone' | 'system_alert' | 'prophecy' | 'oracle_prophecy';
+  style?: string;
+  duration?: number;
+  urgency?: string;
+  corruption_influence?: number;
+  effects?: string[];
+}
 
 export interface RealTimeGameEvent {
   session_id: string;
   event_type: string;
   timestamp_utc: string;
   player_address: string;
-  event_payload: any;
+  event_payload: EventPayload;
 }
 
 export interface OracleResponse {
@@ -29,23 +64,31 @@ export interface PlayerCorruptionState {
   total_events: number;
 }
 
+export interface GameMessage {
+  type: string;
+  payload: Record<string, unknown>;
+}
+
 export class RealTimeOracleEngine {
   private oracleEngine: ChodeOracleEngine;
   private playerStates: Map<string, PlayerCorruptionState> = new Map();
   private eventQueue: RealTimeGameEvent[] = [];
   private responseCallbacks: Set<(response: OracleResponse) => void> = new Set();
-  private gameMessageCallback?: (message: any) => void;
+  private gameMessageCallback?: (message: GameMessage) => void;
   
   // Event significance thresholds
-  private readonly SIGNIFICANCE_THRESHOLDS = {
-    tap_activity_burst: 0.3,
-    mega_slap_landed: 0.7,
-    giga_slap_landed: 0.9,
-    chode_evolution: 1.0,
-    achievement_unlocked: 0.8,
-    oracle_girth_milestone: 0.8,
-    oracle_player_identification: 0.5,
-    oracle_upgrade_mastery: 0.6
+  private readonly SIGNIFICANCE_THRESHOLDS: Record<string, number> = {
+    'player_session_start': 0.3,     // Session starts are significant for first impressions
+    'tap_activity_burst': 0.1,       // 🔧 DEMO: Lowered from 0.2 for better responsiveness  
+    'mega_slap_landed': 0.8,         // High significance for power events
+    'giga_slap_landed': 0.9,         // Maximum significance for ultimate power
+    'chode_evolution': 0.9,          // Evolution is always significant
+    'achievement_unlocked': 0.6,     // 🔧 DEMO: Increased from 0.4 for celebrations
+    'oracle_player_identification': 0.8, // Important for personalization
+    'oracle_upgrade_mastery': 0.7,   // Upgrade purchases are noteworthy
+    'oracle_girth_milestone': 0.8,   // Milestones are always significant
+    'player_state_load_request': 0.02, // 🔧 DEMO: Very low but above threshold for state sync
+    'player_state_save': 0.02        // Low significance for background saves
   };
 
   // Community milestone thresholds
@@ -76,13 +119,21 @@ export class RealTimeOracleEngine {
       
       // Check if event is significant enough for Oracle response
       const significance = this.calculateEventSignificance(gameEvent);
-      if (significance < 0.5) {
-        console.log('🔮 Event below significance threshold:', significance);
+      if (significance < 0.05) { // 🔧 DEMO: Lowered from 0.15 to 0.05 for better demo responsiveness
+        console.log('🔮 Event below significance threshold:', significance.toFixed(3), 'for', rawEvent.event_type);
         return null;
       }
 
+      console.log('🔮 Event meets significance threshold:', significance.toFixed(3), 'for', rawEvent.event_type);
+
+      // Create a compatible game event for the Oracle engine
+      const oracleGameEvent = {
+        ...gameEvent,
+        event_payload: gameEvent.event_payload || {}
+      };
+
       // Generate Oracle response through personality engine
-      const notification = await this.oracleEngine.processSignificantEvent(gameEvent);
+      const notification = await this.oracleEngine.processSignificantEvent(oracleGameEvent);
       if (!notification) {
         console.log('🔮 Oracle chose not to respond to this event');
         return null;
@@ -106,6 +157,9 @@ export class RealTimeOracleEngine {
 
       // Send response to all listeners
       this.notifyResponseCallbacks(response);
+
+      // Send to SmartAlertsService for alert display
+      this.sendToSmartAlerts(response);
 
       // Send message back to game if needed
       if (response.send_to_game && this.gameMessageCallback) {
@@ -170,8 +224,11 @@ export class RealTimeOracleEngine {
     let scaleFactor = 1;
     if (event.event_payload) {
       // More dramatic events = more corruption
-      if (event.event_payload.slap_power_girth > 1000) scaleFactor = 1.5;
-      if (event.event_payload.giga_slap_streak >= 5) scaleFactor = 2.0;
+      const slapPower = event.event_payload.slap_power_girth;
+      const gigaStreak = event.event_payload.giga_slap_streak;
+      
+      if (slapPower && slapPower > 1000) scaleFactor = 1.5;
+      if (gigaStreak && gigaStreak >= 5) scaleFactor = 2.0;
       if (event.event_payload.oracle_significance === 'legendary') scaleFactor = 1.8;
     }
 
@@ -193,7 +250,7 @@ export class RealTimeOracleEngine {
       player_address: rawEvent.player_address,
       event_payload: rawEvent.event_payload,
       corruption_level: this.getPlayerCorruption(rawEvent.player_address),
-      community_significance: this.assessCommunitySignificance(rawEvent)
+      community_significance: this.assessCommunitySignificance(rawEvent) ? 1.0 : 0.0 // Convert boolean to number
     };
   }
 
@@ -250,8 +307,8 @@ export class RealTimeOracleEngine {
 
   private assessCommunitySignificance(event: RealTimeGameEvent): boolean {
     // Check if this event represents a community milestone
-    if (event.event_type === 'tap_activity_burst') {
-      const totalTaps = event.event_payload?.total_taps || 0;
+    if (event.event_type === 'tap_activity_burst' && event.event_payload.tap_count) {
+      const totalTaps = event.event_payload.tap_count;
       return this.COMMUNITY_MILESTONES.some(milestone => 
         totalTaps >= milestone.threshold && 
         totalTaps < milestone.threshold + 100 // Within range of milestone
@@ -262,12 +319,69 @@ export class RealTimeOracleEngine {
   }
 
   private isCommunityMilestone(event: GameEvent): boolean {
-    return event.community_significance === true;
+    return (event.community_significance || 0) > 0.5; // Check if significance score is high enough
   }
 
   private isPlayerFirstTime(event: GameEvent): boolean {
     const playerState = this.playerStates.get(event.player_address || 'anonymous');
     return !playerState || playerState.total_events < 5;
+  }
+
+  // === SMART ALERTS INTEGRATION ===
+
+  private sendToSmartAlerts(response: OracleResponse): void {
+    // Convert Oracle response to SmartAlert format
+    const alertType = this.mapNotificationToAlertType(response.notification.type);
+    
+    smartAlertsService.addAlert({
+      id: `oracle_response_${response.response_id}`,
+      source: 'oracle',
+      type: alertType,
+      title: response.notification.title,
+      message: response.notification.message,
+      icon: this.getAlertIcon(response.notification.style),
+      priority: this.mapUrgencyToAlertPriority(response.notification.urgency),
+      timestamp: response.timestamp,
+      dismissible: true,
+      autoHide: response.notification.duration ? response.notification.duration > 8000 : false,
+      hideAfter: response.notification.duration,
+      metadata: {
+        responseId: response.response_id,
+        corruption: response.notification.corruption_influence,
+        style: response.notification.style
+      }
+    });
+  }
+
+  private mapNotificationToAlertType(type?: string): 'prophecy' | 'poll' | 'milestone' | 'glitch' | 'community' | 'system' {
+    const typeMap: Record<string, 'prophecy' | 'poll' | 'milestone' | 'glitch' | 'community' | 'system'> = {
+      'personal_vision': 'prophecy',
+      'community_milestone': 'milestone',
+      'system_alert': 'system',
+      'prophecy': 'prophecy',
+      'oracle_prophecy': 'prophecy'
+    };
+    return typeMap[type || 'prophecy'] || 'prophecy';
+  }
+
+  private mapUrgencyToAlertPriority(urgency?: string): 'low' | 'medium' | 'high' | 'critical' {
+    const priorityMap: Record<string, 'low' | 'medium' | 'high' | 'critical'> = {
+      'legendary': 'critical',
+      'high': 'high',
+      'medium': 'medium',
+      'low': 'low'
+    };
+    return priorityMap[urgency || 'medium'] || 'medium';
+  }
+
+  private getAlertIcon(style?: string): string {
+    const iconMap: Record<string, string> = {
+      'cyberpunk_prophet': '🔮',
+      'corrupted_oracle': '🔥',
+      'chaotic_sage': '⚡',
+      'pure_prophet': '✨'
+    };
+    return iconMap[style || 'pure_prophet'] || '👁️';
   }
 
   // === GAME COMMUNICATION ===
@@ -302,7 +416,7 @@ export class RealTimeOracleEngine {
     this.responseCallbacks.delete(callback);
   }
 
-  public setGameMessageCallback(callback: (message: any) => void): void {
+  public setGameMessageCallback(callback: (message: GameMessage) => void): void {
     this.gameMessageCallback = callback;
   }
 
@@ -337,7 +451,7 @@ export class RealTimeOracleEngine {
 
   // === TESTING & DEBUG ===
 
-  public simulateGameEvent(eventType: string, payload: any = {}): Promise<OracleResponse | null> {
+  public simulateGameEvent(eventType: string, payload: EventPayload = {}): Promise<OracleResponse | null> {
     const simulatedEvent: RealTimeGameEvent = {
       session_id: `sim_${Date.now()}`,
       event_type: eventType,

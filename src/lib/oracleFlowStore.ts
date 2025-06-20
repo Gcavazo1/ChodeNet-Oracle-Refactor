@@ -5,6 +5,11 @@ import { supabase } from './supabase';
 import { directAPI } from './directAPIIntegration';
 import { sanitizeTopic } from './textUtils';
 
+// Utility function to sanitize topic input
+const sanitizeTopic = (topic: string): string => {
+  return topic.replace(/[^\w\s_-]/g, '').trim();
+};
+
 export interface RitualTopic {
   id: string;
   text: string;
@@ -28,6 +33,8 @@ export interface GeneratedProphecy {
   image_url?: string;
   visual_themes?: string[];
   source_metrics?: any;
+  created_at?: string;
+  prophecy_text?: string;
 }
 
 export interface ScrollEntry {
@@ -38,6 +45,7 @@ export interface ScrollEntry {
   source_metrics_snapshot?: any;
 }
 
+// SEPARATED: Oracle Prophecy System State
 interface OracleFlowStore {
   // Ritual Requests State
   currentTopic: string | null;
@@ -52,20 +60,29 @@ interface OracleFlowStore {
   isLoadingScrolls: boolean;
   generatingImages: Set<string>;
   
-  // Flow Control
-  activeTab: 'ritual' | 'chamber' | 'scrolls' | 'lore' | 'archive';
-  highlightedLoreId: string | null;
+  // PROPHECY SYSTEM ONLY: Flow Control
+  prophecyActiveTab: 'ritual' | 'chamber' | 'scrolls';
   isSubscribed: boolean;
   
   // Actions
   selectTopic: (topicId: string | null) => void;
   generateProphecy: (girthMetrics: any) => Promise<void>;
-  switchToTab: (tab: 'ritual' | 'chamber' | 'scrolls' | 'lore' | 'archive') => void;
-  highlightLoreEntry: (loreId: string) => void;
-  clearHighlightedLoreEntry: () => void;
+  switchToProphecyTab: (tab: 'ritual' | 'chamber' | 'scrolls') => void;
   generateScrollImage: (scrollId: string) => Promise<void>;
   setupRealtimeSubscription: () => (() => void);
   refreshScrolls: () => Promise<void>;
+}
+
+// NEW: Oracle Lore System State (Separate)
+interface OracleLoreStore {
+  // LORE SYSTEM ONLY: Flow Control
+  loreActiveTab: 'lore' | 'archive';
+  highlightedLoreId: string | null;
+  
+  // Actions
+  switchToLoreTab: (tab: 'lore' | 'archive') => void;
+  highlightLoreEntry: (loreId: string) => void;
+  clearHighlightedLoreEntry: () => void;
 }
 
 const RITUAL_TOPICS: RitualTopic[] = [
@@ -99,6 +116,7 @@ const RITUAL_TOPICS: RitualTopic[] = [
 // Global variable to track subscription to prevent duplicates
 let globalOracleFlowSubscription: any = null;
 
+// ORACLE PROPHECY SYSTEM STORE (Separated)
 export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
   // Initial State
   currentTopic: null,
@@ -112,8 +130,7 @@ export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
   scrolls: [],
   isLoadingScrolls: true,
   generatingImages: new Set(),
-  activeTab: 'ritual',
-  highlightedLoreId: null,
+  prophecyActiveTab: 'ritual', // RENAMED: Only for prophecy system
   isSubscribed: false,
 
   // Actions
@@ -121,7 +138,7 @@ export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
     console.log('🎯 Oracle Flow: Topic selected:', topicId);
     set({ 
       currentTopic: topicId,
-      activeTab: topicId ? 'chamber' : 'ritual',
+      prophecyActiveTab: topicId ? 'chamber' : 'ritual', // UPDATED: Use prophecy-specific tab
       // Clear previous prophecy when selecting a new topic
       latestProphecy: null,
       // Reset generation state
@@ -129,8 +146,7 @@ export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
         isGenerating: false,
         currentStep: 'idle',
         progress: ''
-      },
-      highlightedLoreId: null
+      }
     });
   },
 
@@ -211,7 +227,7 @@ export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
           currentStep: 'complete',
           progress: 'Prophecy manifested! The Oracle has spoken...'
         },
-        activeTab: 'scrolls'
+        prophecyActiveTab: 'scrolls' // UPDATED: Use prophecy-specific tab
       });
 
       // Refresh scrolls to show the new prophecy
@@ -232,81 +248,84 @@ export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
     }
   },
 
-  switchToTab: (tab: 'ritual' | 'chamber' | 'scrolls' | 'lore' | 'archive') => {
-    console.log('🔮 Oracle Flow: Switching to tab:', tab);
-    set({ activeTab: tab, highlightedLoreId: null });
-  },
-
-  highlightLoreEntry: (loreId: string) => {
-    console.log('✨ Oracle Flow: Highlighting lore entry:', loreId);
-    set({ activeTab: 'archive', highlightedLoreId: loreId });
-  },
-
-  clearHighlightedLoreEntry: () => {
-    console.log('✨ Oracle Flow: Clearing highlight.');
-    set({ highlightedLoreId: null });
+  switchToProphecyTab: (tab: 'ritual' | 'chamber' | 'scrolls') => {
+    console.log('🔮 Oracle Prophecy: Switching to tab:', tab);
+    set({ prophecyActiveTab: tab }); // UPDATED: Use prophecy-specific tab
   },
 
   generateScrollImage: async (scrollId: string) => {
-    console.log('🎨 generateScrollImage called but images are not supported for apocryphal_scrolls table');
-    console.log('🎨 ScrollId:', scrollId);
-    // This function is kept for interface compatibility but does nothing
-    // since the apocryphal_scrolls table doesn't have image columns
+    const { generatingImages } = get();
+    if (generatingImages.has(scrollId)) {
+      console.log('🎨 Image already generating for scroll:', scrollId);
+      return;
+    }
+
+    console.log('🎨 Starting image generation for scroll:', scrollId);
+    
+    set({
+      generatingImages: new Set([...generatingImages, scrollId])
+    });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-scroll-image', {
+        body: { scroll_id: scrollId }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('🎨 Image generation completed for scroll:', scrollId);
+      
+      // Refresh scrolls to show the new image
+      get().refreshScrolls();
+      
+    } catch (error) {
+      console.error('🎨 Image generation failed for scroll:', scrollId, error);
+    } finally {
+      const { generatingImages: currentGenerating } = get();
+      const newGenerating = new Set(currentGenerating);
+      newGenerating.delete(scrollId);
+      set({ generatingImages: newGenerating });
+    }
   },
 
   setupRealtimeSubscription: () => {
-    // Check if already subscribed
-    if (get().isSubscribed || globalOracleFlowSubscription) {
-      console.log('🔮 Oracle Flow: Subscription already exists, returning existing cleanup function');
-      return () => {
-        if (globalOracleFlowSubscription) {
-          console.log('🔮 Oracle Flow: Cleaning up existing subscription');
-          globalOracleFlowSubscription.unsubscribe();
-          globalOracleFlowSubscription = null;
-          set({ isSubscribed: false });
-        }
-      };
+    if (globalOracleFlowSubscription) {
+      console.log('🔮 Oracle Flow: Subscription already exists, skipping setup');
+      return () => {};
     }
 
-    console.log('🔮 Oracle Flow: Setting up NEW realtime subscription...');
+    console.log('🔮 Oracle Flow: Setting up realtime subscription for apocryphal_scrolls');
     
-    // Initial load
-    get().refreshScrolls();
-
-    // Subscribe to new scrolls with unique channel name
-    const channelName = `oracle-flow-scrolls-${Date.now()}`;
-    globalOracleFlowSubscription = supabase
-      .channel(channelName)
+    const subscription = supabase
+      .channel('apocryphal_scrolls_changes')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'apocryphal_scrolls'
         },
         (payload) => {
-          console.log('🔮 Oracle Flow: New scroll received:', payload.new);
-          const newScroll = payload.new as ScrollEntry;
-          
-          set((state) => ({
-            scrolls: [newScroll, ...state.scrolls]
-          }));
+          console.log('🔮 Oracle Flow: Received realtime update:', payload);
+          // Refresh scrolls when changes occur
+          get().refreshScrolls();
         }
       )
       .subscribe((status) => {
         console.log('🔮 Oracle Flow: Subscription status:', status);
         if (status === 'SUBSCRIBED') {
           set({ isSubscribed: true });
-        } else if (status === 'CLOSED') {
-          set({ isSubscribed: false });
-          globalOracleFlowSubscription = null;
         }
       });
+
+    globalOracleFlowSubscription = subscription;
 
     return () => {
       console.log('🔮 Oracle Flow: Cleaning up subscription');
       if (globalOracleFlowSubscription) {
-        globalOracleFlowSubscription.unsubscribe();
+        supabase.removeChannel(globalOracleFlowSubscription);
         globalOracleFlowSubscription = null;
       }
       set({ isSubscribed: false });
@@ -315,46 +334,64 @@ export const useOracleFlowStore = create<OracleFlowStore>((set, get) => ({
 
   refreshScrolls: async () => {
     console.log('🔮 Oracle Flow: Refreshing scrolls...');
-    console.log('🔮 Oracle Flow: Current store state before refresh:', {
-      currentScrollsLength: get().scrolls.length,
-      isCurrentlyLoading: get().isLoadingScrolls
-    });
-    
     set({ isLoadingScrolls: true });
 
     try {
-      console.log('🔮 Oracle Flow: Making Supabase query...');
-      const { data: scrollsData, error } = await supabase
+      const { data, error } = await supabase
         .from('apocryphal_scrolls')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20);
 
-      console.log('🔮 Oracle Flow: Supabase query completed:', {
-        hasError: !!error,
-        dataLength: scrollsData?.length || 0,
-        errorDetails: error
-      });
-
       if (error) {
         throw error;
       }
 
-      console.log('🔮 Oracle Flow: Setting scrolls data in store:', {
-        scrollsLength: scrollsData?.length || 0,
-        firstScrollId: scrollsData?.[0]?.id,
-        firstScrollText: scrollsData?.[0]?.prophecy_text?.substring(0, 50)
-      });
-      
+      console.log('🔮 Oracle Flow: Loaded scrolls:', data?.length || 0);
       set({ 
-        scrolls: scrollsData || [],
+        scrolls: data || [],
         isLoadingScrolls: false 
       });
-      
-      console.log('🔮 Oracle Flow: Store updated successfully!');
+
     } catch (error) {
-      console.error('🔮 Oracle Flow: Error loading scrolls:', error);
+      console.error('🔮 Oracle Flow: Error refreshing scrolls:', error);
       set({ isLoadingScrolls: false });
     }
   }
 }));
+
+// NEW: ORACLE LORE SYSTEM STORE (Separate)
+export const useOracleLoreStore = create<OracleLoreStore>((set, get) => ({
+  // Initial State
+  loreActiveTab: 'lore', // Default to lore input
+  highlightedLoreId: null,
+
+  // Actions
+  switchToLoreTab: (tab: 'lore' | 'archive') => {
+    console.log('📖 Oracle Lore: Switching to tab:', tab);
+    set({ loreActiveTab: tab, highlightedLoreId: null });
+  },
+
+  highlightLoreEntry: (loreId: string) => {
+    console.log('✨ Oracle Lore: Highlighting lore entry:', loreId);
+    set({ loreActiveTab: 'archive', highlightedLoreId: loreId });
+  },
+
+  clearHighlightedLoreEntry: () => {
+    console.log('✨ Oracle Lore: Clearing highlight.');
+    set({ highlightedLoreId: null });
+  }
+}));
+
+// LEGACY COMPATIBILITY: Export old function names that redirect to new stores
+export const switchToTab = (tab: 'ritual' | 'chamber' | 'scrolls' | 'lore' | 'archive') => {
+  if (tab === 'lore' || tab === 'archive') {
+    useOracleLoreStore.getState().switchToLoreTab(tab);
+  } else {
+    useOracleFlowStore.getState().switchToProphecyTab(tab);
+  }
+};
+
+export const highlightLoreEntry = (loreId: string) => {
+  useOracleLoreStore.getState().highlightLoreEntry(loreId);
+};

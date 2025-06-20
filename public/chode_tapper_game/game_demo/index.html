@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>$CHODE Tapper - Genesis Tap Demo</title>
+		<title>$CHODE Tapper - Oracle's Antechamber</title>
 		<style>
 html, body, #canvas {
 	margin: 0;
@@ -90,86 +90,62 @@ body {
 	z-index: 1;
 }
 		</style>
-		<!-- Solana Web3.js - SDK might bundle its own or rely on extension directly -->
-		<!-- <script src="https://unpkg.com/@solana/web3.js@1.98.2/lib/index.iife.min.js"></script> -->
 
 		<script>
-// Declare godotReadyPromise and its resolver globally.
-// This promise will be resolved in the main Godot engine script (index.js) after the engine starts.
-let resolveGodotReadyPromise;
-const godotReadyPromise = new Promise(resolve => {
-    resolveGodotReadyPromise = resolve;
-});
+// 🏛️ MINIMAL ORACLE WEB SHELL - Simplified for JavaScriptBridge debugging
+console.log("[Web Shell] 🏛️ Minimal Oracle web shell loading...");
 
-window.addEventListener('load', () => {
-    console.log("[HTML] Page loaded.");
-    // REMOVED: Wallet extension detection logic, SDK will handle this.
-    // if (window.solana && window.solana.isPhantom) { ... } 
-    // window.solanaWalletAdapter = null;
-});
+// Simple message forwarding to parent Oracle page
+function forwardToParent(messageData) {
+    try {
+        window.parent.postMessage(JSON.stringify(messageData), '*');
+        console.log('[Web Shell] ✅ Message forwarded to parent:', messageData.type);
+    } catch (error) {
+        console.error('[Web Shell] ❌ Failed to forward to parent:', error);
+    }
+}
 
-// Godot callbacks should be defined globally and immediately available
-window.chodeNetGodotCallbacks = window.chodeNetGodotCallbacks || {};
-
-// REVISED: godotReceiveMessageFromParent is for ORACLE UI messages, NOT wallet connection results from parent.
-// Wallet connection results will come via SDK signals directly in Godot.
-// This function still handles messages FROM PARENT (e.g. new prophecy, oracle messages viewed)
-// and creates an internal message for Godot context to pick up.
-window.chodeNetGodotCallbacks.godotReceiveMessageFromParent = async function(jsonStringPayload) {
-    console.log('[JS HTML Callback] Received for Oracle/UI:', jsonStringPayload);
-    await godotReadyPromise; // Ensure Godot is ready before posting internal message
-    
-    console.log('[JS HTML Callback] Godot engine is ready, sending Oracle/UI message to self for internal handling:', jsonStringPayload);
-    window.postMessage({
-        type: 'godot_internal_message', // This type is for Oracle UI messages
-        payload: JSON.parse(jsonStringPayload) 
-    }, '*');
-    console.log('[JS HTML Callback] Sent internal godot_internal_message for Oracle/UI.');
-};
-
-// REMOVED: window.chodeNetGodotCallbacks.godotConnectSolanaWallet
-// The SDK's WalletAdapter node in Godot will trigger wallet connections.
-
+// Single message listener for parent Oracle messages
 window.addEventListener('message', function(event) {
-    console.log('[Godot Iframe] Message received via postMessage:', event.data, 'From origin:', event.origin);
+    // Skip browser extension noise
+    if (event.data && typeof event.data === 'object' && 
+        (event.data.target === 'metamask-inpage' || event.data.target === 'metamask-contentscript')) {
+        return;
+    }
     
-    // Handle internal messages for Godot's JavaScript context (e.g., from godotReceiveMessageFromParent above)
-    if (event.data && event.data.type === 'godot_internal_message') {
-        console.log('[Godot Iframe] Received internal Godot message (likely Oracle UI), will be handled by engine context listener');
-        return; // Let the engine context listener handle this
-    }
-
-    // REMOVED: Wallet connection message handling from parent container.
-    // if (event.data && event.data.type === 'wallet_connected') { ... }
-
-    // This part handles messages that are *NOT* 'godot_internal_message' and *NOT* 'wallet_connected' (which is removed)
-    // It's a general fallback, but primarily, messages from parent should be structured objects
-    // and handled by chodeNetGodotCallbacks.godotReceiveMessageFromParent which then creates 'godot_internal_message'.
-    // We might need to refine this if there are other types of messages expected directly.
-    // For now, let's assume structured messages from parent come via the specific callback.
+    // Handle string messages from Oracle parent
     if (typeof event.data === 'string') {
-        // This path might be for very simple string messages, if any are still used.
-        // Consider routing these through a structured {type: 'some_other_event', payload: event.data}
-        // via chodeNetGodotCallbacks.godotReceiveMessageFromParent for consistency.
-        console.warn('[Godot Iframe] Received raw string message from parent:', event.data);
-        // If you still need to forward raw strings to Godot directly:
-        // if(window.chodeNetGodotCallbacks.godotReceiveMessageFromParent) {
-        //     window.chodeNetGodotCallbacks.godotReceiveMessageFromParent(event.data);
-        // }
-    } else if (typeof event.data === 'object' && event.data !== null) {
-        // This is a catch-all for other object messages.
-        // Ideally, all messages from parent to iframe are structured and use a specific type.
-        console.warn('[Godot Iframe] Received generic object message from parent:', event.data);
-        // if(window.chodeNetGodotCallbacks.godotReceiveMessageFromParent && event.data.type !== 'godot_internal_message') {
-        //     window.chodeNetGodotCallbacks.godotReceiveMessageFromParent(JSON.stringify(event.data));
-        // }
-    } else {
-        console.warn('[Godot Iframe] Received unexpected message format from parent:', event.data);
+        try {
+            const messageData = JSON.parse(event.data);
+            console.log('[Web Shell] 📥 Received Oracle message:', messageData.type);
+            
+            // Forward to Godot via window.godotCallback (set by Global.gd)
+            if (typeof window.godotCallback === 'function') {
+                window.godotCallback(event.data);
+                console.log('[Web Shell] ✅ Forwarded to Godot via callback');
+            } else {
+                console.warn('[Web Shell] ⚠️ godotCallback not available yet');
+            }
+        } catch (e) {
+            // Ignore malformed JSON
+        }
     }
-}, false);
+    
+    // Handle object messages from Oracle parent
+    else if (typeof event.data === 'object' && event.data !== null) {
+        console.log('[Web Shell] 📥 Received Oracle object:', event.data.type);
+        
+        // Forward to Godot via window.godotCallback
+        if (typeof window.godotCallback === 'function') {
+            window.godotCallback(JSON.stringify(event.data));
+            console.log('[Web Shell] ✅ Forwarded object to Godot via callback');
+        } else {
+            console.warn('[Web Shell] ⚠️ godotCallback not available for object message');
+        }
+    }
+});
 
-console.log('[JS Setup] chodeNetGodotCallbacks.godotReceiveMessageFromParent (for Oracle UI) is defined.');
-// REMOVED: console.log for godotConnectSolanaWallet
+console.log('[Web Shell] 🔮 Oracle message listener ready');
 		</script>
 	</head>
 	<body>
@@ -189,12 +165,9 @@ console.log('[JS Setup] chodeNetGodotCallbacks.godotReceiveMessageFromParent (fo
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":16063488,"index.wasm":52126319},"focusCanvas":false,"gdextensionLibs":[]}; // Note: gdextensionLibs might be auto-populated by export process if SDK is set up correctly
-const GODOT_THREADS_ENABLED = false; // SDK should work with single-threaded builds too.
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":16063488,"index.wasm":52126319},"focusCanvas":false,"gdextensionLibs":[]};
+const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
-
-// Global reference to Godot for testing
-window.godotGame = null;
 
 (function () {
 	const statusOverlay = document.getElementById('status');
@@ -255,7 +228,6 @@ window.godotGame = null;
 			} catch (err) {
 				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
 			}
-			// There's a chance that installing the service worker would fix the issue
 			Promise.race([
 				serviceWorkerRegistrationPromise.then((registration) => {
 					if (registration != null) {
@@ -263,18 +235,15 @@ window.godotGame = null;
 					}
 					return registration;
 				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
 				new Promise((resolve) => {
 					setTimeout(() => resolve(), 2000);
 				}),
 			]).then(() => {
-				// Reload if there was no error.
 				window.location.reload();
 			}).catch((err) => {
 				console.error('Error while registering service worker:', err);
 			});
 		} else {
-			// Display the message as usual
 			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
@@ -292,75 +261,33 @@ window.godotGame = null;
 			},
 		}).then(() => {
 			setStatusMode('hidden');
-            console.log('[Godot Engine] Engine started successfully, resolving godotReadyPromise...');
-            resolveGodotReadyPromise(true); 
-            console.log('[Godot Engine] 🎉 godotReadyPromise resolved! Godot engine is ready.');
+            console.log('[Web Shell] 🎮 Godot engine started successfully');
             
-            // Set global reference for testing
-            window.godotGame = {
-                quickTest: () => {
-                    if (typeof JavaScriptBridge !== 'undefined' && JavaScriptBridge.eval) {
-                        JavaScriptBridge.eval("Engine.get_singleton('Global')._quick_test();");
-                        console.log('🚀 Game quick test triggered!');
-                    } else {
-                        console.error('❌ JavaScriptBridge not available');
-                    }
-                },
-                testOracleIntegration: () => {
-                    if (typeof JavaScriptBridge !== 'undefined' && JavaScriptBridge.eval) {
-                        JavaScriptBridge.eval("Engine.get_singleton('Global')._test_full_oracle_integration();");
-                        console.log('🔮 Oracle integration test triggered!');
-                    } else {
-                        console.error('❌ JavaScriptBridge not available');
-                    }
-                },
-                simulateParentMessage: (messageData) => {
-                    window.chodeNetGodotCallbacks.godotReceiveMessageFromParent(JSON.stringify(messageData));
-                    console.log('📨 Parent message simulated:', messageData);
-                },
-                getGameState: () => {
-                    if (typeof JavaScriptBridge !== 'undefined' && JavaScriptBridge.eval) {
-                        JavaScriptBridge.eval("Engine.get_singleton('Global')._debug_web_export_state();");
-                        console.log('📊 Game state debug triggered - check game console');
-                    } else {
-                        console.error('❌ JavaScriptBridge not available');
-                    }
+            // Simple testing interface (minimal)
+            window.testWallet = function(connected = true) {
+                const walletMessage = {
+                    type: 'wallet_status_update',
+                    connected: connected,
+                    address: connected ? 'H9Z8FoJ6uqWgh8CmZvLnFyoYdp5Xrtx7s48ovr9JTdefS' : '',
+                    timestamp: new Date().toISOString()
+                };
+                console.log('[Test] 💰 Sending wallet test:', walletMessage);
+                console.log('[Test] 🔍 Callback type:', typeof window.godotCallback);
+                if (typeof window.godotCallback === 'function') {
+                    window.godotCallback(JSON.stringify(walletMessage));
+                    console.log('[Test] ✅ Callback invoked successfully');
+                } else {
+                    console.warn('[Test] ⚠️ godotCallback not available');
                 }
             };
             
-            console.log('🎮 Godot game testing interface ready!');
-            console.log('Available commands:');
-            console.log('  window.godotGame.quickTest() - Quick functionality test');
-            console.log('  window.godotGame.testOracleIntegration() - Full Oracle test');
-            console.log('  window.godotGame.getGameState() - Debug game state');
-            console.log('  window.godotGame.simulateParentMessage(data) - Test parent messages');
+            // Test callback availability after a delay
+            setTimeout(() => {
+                console.log('[Web Shell] 🔍 Delayed callback check:', typeof window.godotCallback);
+            }, 2000);
             
-            // This listener is now PRIMARILY for 'godot_internal_message' which are Oracle UI messages
-            // forwarded by window.chodeNetGodotCallbacks.godotReceiveMessageFromParent
-            window.addEventListener('message', function(event) {
-                if (event.data && typeof event.data === 'object' && event.data.target === 'metamask-inpage') {
-                    console.log('[Godot Context] Ignoring Metamask inpage message:', event.data);
-                    return; 
-                }
-
-                if (event.data && event.data.type === 'godot_internal_message') { // This type is for Oracle UI messages
-                    console.log('[Godot Context] Received internal message (Oracle UI) for Godot processing:', event.data.payload);
-                    
-                    if (typeof JavaScriptBridge !== 'undefined' && JavaScriptBridge.eval) {
-                        const messageJson = JSON.stringify(event.data.payload);
-                        // Ensure Global._js_receive_message_from_parent_wrapper exists and is intended for these messages
-                        const gdscript_call = `Engine.get_singleton('Global')._js_receive_message_from_parent_wrapper('${messageJson.replace(/'/g, "\\'")}');`;
-                        
-                        console.log('[Godot Context] Attempting to call GDScript (Oracle UI) via JavaScriptBridge.eval:', gdscript_call);
-                        JavaScriptBridge.eval(gdscript_call);
-                        console.log('[Godot Context] Successfully attempted to call GDScript (Oracle UI) via JavaScriptBridge.eval');
-                    } else {
-                        console.error('[Godot Context] JavaScriptBridge or its eval method is not available for Oracle UI message.');
-                    }
-                }
-            });
+            console.log('[Web Shell] ✅ Ready! Test with: window.testWallet(true/false)');
             
-            console.log('[Godot Context] Message listener for godot_internal_message (Oracle UI) registered after engine start');
 		}, displayFailureNotice);
 	}
 }());

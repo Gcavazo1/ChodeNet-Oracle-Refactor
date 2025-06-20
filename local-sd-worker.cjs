@@ -1,6 +1,18 @@
-// local-sd-worker.cjs
+// ===============================================
+// 🎨 LOCAL STABLE DIFFUSION WORKER
+// ===============================================
 // CommonJS version to work with "type": "module" projects
 // ENHANCED WITH CHODE PROMPT GENERATOR
+//
+// 📁 FILE ORGANIZATION:
+// 1. 🎛️ GENERATION CONFIGURATION - All tunable parameters
+// 2. 🖼️ CHODE Reference Library utilities  
+// 3. 🧠 CHODE Prompt Generator class
+// 4. 🎛️ Denoising calculation functions
+// 5. 🔌 Connection & job processing logic
+// 6. 🚀 Worker startup and polling
+//
+// 🔧 TO TUNE GENERATION: Modify values in GENERATION CONFIGURATION section
 
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
@@ -13,16 +25,76 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const LOCAL_SD_URL = process.env.LOCAL_SD_URL || 'http://127.0.0.1:7860';
 
-// === TESTING CONFIGURATION ===
-const ENABLE_REFERENCE_IMAGES = true; // Re-enable img2img with HIGH denoising for story-first generation with style influence
-const ENABLE_LORAS = true; // Keep LoRAs enabled for CHODE universe aesthetic
+// ===============================================
+// 🎛️ GENERATION CONFIGURATION - TUNE HERE
+// ===============================================
 
-// =========================
-// 🎛️ DENOISING CONFIGURATION
-// =========================
-// IMPORTANT: Text2Image denoise should be >0.7 to avoid copying reference library images
-const TEXT_TO_IMAGE_DENOISE = 0.55; // Fixed denoise for txt2img (ADJUST THIS VALUE)
-const ENABLE_DYNAMIC_IMG2IMG_DENOISE = true; // Enable dynamic denoising for img2img based on story content
+// --- GENERATION MODE CONTROLS ---
+const ENABLE_REFERENCE_IMAGES = true; // Enable img2img mode with reference library images
+const ENABLE_LORAS = true; // Enable LoRA models for CHODE universe aesthetic
+const ENABLE_DYNAMIC_IMG2IMG_DENOISE = true; // Dynamic denoising based on story content
+
+// --- TEXT-TO-IMAGE CONFIGURATION ---
+// NOTE: Not actually used in txt2img API, but kept for reference/logging
+const TEXT_TO_IMAGE_DENOISE = 0.45; // Reference value for txt2img mode
+
+// --- IMAGE-TO-IMAGE DENOISING CONFIGURATION ---
+// Base denoising levels per corruption type for img2img mode
+const IMG2IMG_BASE_DENOISING = {
+  'pristine': 0.9,           // High denoising for clean corruptions
+  'cryptic': 0.9,            // High denoising for subtle corruptions  
+  'flickering': 0.9,         // Medium denoising for unstable corruptions
+  'glitched_ominous': 0.9,   // Medium denoising for chaotic corruptions
+  'forbidden_fragment': 0.9  // Highest denoising for extreme corruptions
+};
+
+// Static img2img denoising (used when ENABLE_DYNAMIC_IMG2IMG_DENOISE = false)
+const STATIC_IMG2IMG_DENOISE = 0.80;
+
+// Dynamic denoising adjustments based on story content richness
+const DYNAMIC_DENOISE_ADJUSTMENTS = {
+  HIGH_STORY_WEIGHT: -0.20,    // Rich story content: Lower denoising for stronger story influence
+  MEDIUM_STORY_WEIGHT: -0.10,  // Medium story content: Slight denoising reduction
+  LOW_STORY_WEIGHT: 0.00       // Minimal story content: Use base denoising
+};
+
+// Story weight thresholds for dynamic denoising
+const STORY_WEIGHT_THRESHOLDS = {
+  HIGH: 0.8,     // 4+ entities detected
+  MEDIUM: 0.65   // 2-3 entities detected  
+};
+
+// --- GENERATION PARAMETERS ---
+const GENERATION_PARAMS = {
+  width: 896,
+  height: 896,
+  steps: 28,                    // TUNE: Increase for quality, decrease for speed
+  cfg_scale: 8.0,             // TUNE: Higher = stricter prompt adherence (1-20)
+  sampler_name: "DPM++ 2M Karras", // TUNE: Different samplers affect style
+  seed: -1,                     // -1 = random, set number for reproducible results
+  restore_faces: false,
+  tiling: false,
+  enable_hr: false
+};
+
+// --- TIMEOUT CONFIGURATION ---
+const GENERATION_TIMEOUT_MS = 600000; // TUNE: 10 minutes (600,000ms) - increase for complex generations
+
+// ===============================================
+// 🎯 QUICK TUNING REFERENCE:
+// ===============================================
+// 📈 For Higher Quality: Increase steps (50-80), increase cfg_scale (12-15)
+// ⚡ For Faster Generation: Decrease steps (20-30), decrease cfg_scale (7-10)  
+// ⏱️ For Timeout Issues: Increase GENERATION_TIMEOUT_MS (default: 10min, try 15-20min for complex gens)
+// 🎨 For Story Influence: Enable ENABLE_DYNAMIC_IMG2IMG_DENOISE, adjust IMG2IMG_BASE_DENOISING
+// 🖼️ For Reference Images: Set ENABLE_REFERENCE_IMAGES = true, populate folders:
+//     📁 chode_reference_library/characters/ - Character references
+//     📁 chode_reference_library/environments/ - Location/scene references  
+//     📁 chode_reference_library/memes/ - Meme/tech aesthetic references
+//     📁 chode_reference_library/cosmic/ - Abstract/cosmic references
+// 🎭 For LoRA Effects: Modify weights in getModelConfigForCorruption()
+// 🧠 Smart Selection: Automatically chooses category based on story content analysis
+// ===============================================
 
 // Define the path to the CHODE reference image library
 const CHODE_REFERENCE_LIBRARY_PATH = path.join(__dirname, 'chode_reference_library');
@@ -40,12 +112,78 @@ console.log('📡 Supabase URL:', SUPABASE_URL);
 console.log('⚡ Enhancement Mode: ADVANCED CHODE UNIVERSE PROMPTS');
 console.log('🖼️ CHODE Reference Library Path:', CHODE_REFERENCE_LIBRARY_PATH);
 
-// ===================================
-// Utility to load and encode reference images
-// ===================================
+// ===============================================
+// 🖼️ CHODE REFERENCE LIBRARY UTILITIES
+// ===============================================
 
-async function getRandomReferenceImageAsBase64(corruptionLevel, category = 'characters') {
-  const categoryPath = path.join(CHODE_REFERENCE_LIBRARY_PATH, category, corruptionLevel);
+/**
+ * Smart category selection based on story content analysis
+ * @param {Object} content - Extracted story content with entities
+ * @returns {string} Selected category name
+ */
+function selectSmartReferenceCategory(content) {
+  const { characters, locations, items, concepts } = content.entities;
+  
+  // Count entity types for decision making
+  const characterCount = characters.length;
+  const locationCount = locations.length;
+  const conceptCount = concepts.length;
+  const itemCount = items.length;
+  
+  console.log(`🧠 Smart Selection Analysis: ${characterCount} characters, ${locationCount} locations, ${conceptCount} concepts, ${itemCount} items`);
+  
+  // Priority-based selection logic with better balance
+  
+  // 1. COSMIC: High cosmic content only (much more selective)
+  if (conceptCount >= 2 && 
+      concepts.some(concept => concept.includes("cosmic")) && 
+      concepts.some(concept => concept.includes("raw power")) &&
+      Math.random() < 0.6) { // 60% chance even when conditions met
+    console.log(`🌌 Selected COSMIC: High cosmic+power content with random factor`);
+    return "cosmic";
+  }
+  
+  // 2. MEMES: Meme energy or tech-heavy content (easier trigger)
+  if (concepts.some(concept => 
+    concept.includes("meme energy") || concept.includes("advanced technology"))) {
+    console.log(`🐸 Selected MEMES: Meme/tech energy detected`);
+    return "memes";
+  }
+  
+  // 3. ENVIRONMENTS: Give environments better priority
+  if (locationCount > 0 && Math.random() < 0.5) { // 50% chance for environments if any locations
+    console.log(`🏛️ Selected ENVIRONMENTS: Random environment selection (${locationCount} locations available)`);
+    return "environments";
+  }
+  
+  // 4. CHARACTERS: Give characters better chance (less strict)
+  if (characterCount > 0 && Math.random() < 0.4) { // 40% chance if any characters
+    console.log(`👥 Selected CHARACTERS: Random character selection (${characterCount} characters available)`);
+    return "characters";
+  }
+  
+  // 5. ENHANCED FALLBACK: Weighted random distribution (reduced cosmic weight)
+  const categories = ['characters', 'environments', 'memes', 'cosmic'];
+  const weights = [0.35, 0.35, 0.2, 0.1]; // Reduced cosmic to 10%, boosted chars/envs to 35% each
+  
+  const random = Math.random();
+  let cumulative = 0;
+  
+  for (let i = 0; i < categories.length; i++) {
+    cumulative += weights[i];
+    if (random <= cumulative) {
+      console.log(`🎲 Selected ${categories[i].toUpperCase()}: Weighted random fallback (${(weights[i] * 100).toFixed(0)}% chance)`);
+      return categories[i];
+    }
+  }
+  
+  // Final safety fallback
+  console.log(`🎲 Selected CHARACTERS: Safety fallback`);
+  return "characters";
+}
+
+async function getRandomReferenceImageAsBase64(category = 'characters') {
+  const categoryPath = path.join(CHODE_REFERENCE_LIBRARY_PATH, category);
   console.log(`🔍 Searching for reference images in: ${categoryPath}`);
 
   try {
@@ -56,7 +194,7 @@ async function getRandomReferenceImageAsBase64(corruptionLevel, category = 'char
     });
 
     if (imageFiles.length === 0) {
-      console.warn(`⚠️ No images found for category '${category}' and corruption level '${corruptionLevel}'.`);
+      console.warn(`⚠️ No images found for category '${category}'.`);
       return null;
     }
 
@@ -72,20 +210,20 @@ async function getRandomReferenceImageAsBase64(corruptionLevel, category = 'char
   }
 }
 
-// ===================================
-// CHODE PROMPT GENERATOR (CommonJS Version)
-// ===================================
+// ===============================================
+// 🧠 CHODE PROMPT GENERATOR CLASS
+// ===============================================
 
 class CHODEPromptGenerator {
   constructor() {
     this.CHODE_VISUAL_DNA = {
-      // MODIFIED: Injected more grime and specific aesthetic keywords
-      base_style: "grimey pixel art, detailed dithering, 16-bit retro game graphics, pixel perfect, sharp pixels, vibrant neon on dark background, nsfw, cyberpunkai, neon",
-      // MODIFIED: More specific and degen tags
-      mandatory_tags: ["chode tapper universe", "cyberpunk dumpster fire aesthetic", "girth-powered", "digital mysticism", "meme-fueled", "post-ironic"],
-      quality_tags: ["masterpiece", "best quality", "highly detailed", "crisp pixels"],
-      // MODIFIED: Added common AI art artifacts to exclude
-      exclusion_tags: ["blurry", "photorealistic", "3d render", "smooth", "antialiased", "deformed", "bad anatomy", "disfigured", "watermark", "text", "signature"]
+      base_style: "grimecore cyberpunk, pixel-infested filth, cursed comic energy, hyper-saturated neon, cosmic sludge palette, slap-core digital surrealism, high-res art, idle clicker mythos, radiant grime textures, pixel-perfect, cosmic degeneration, legendary filthscape, NSFW dystopian fantasy, dark-web iconography, Girthpunk mythic energy, degenerate data temples, glitch-laced backdrops, narrator pov",
+      
+      mandatory_tags: ["CHODE Tapper universe","slap-core mythology","$GIRTH particle physics","Primordial Monolith","cyberpunk dumpster fire aesthetic","blockchain worship temples","tap-based devotion","NSFW", "idle obsession","degen pixel cults","post-ironic prophecy","dystopian solana net","token-fueled ascension","hyper-neon alleyway","tap cult ritual","comic book","grimey", "tap button", "futuristic"],
+
+      quality_tags: ["masterpiece","best quality","highly detailed","crisp pixel art", "hyper-realistic", "vibrant lighting"],
+
+      exclusion_tags: ["blurry","deformed","bad anatomy","disfigured","watermark","text","signature"]
     };
 
     this.ENTITY_KEYWORDS = {
@@ -94,13 +232,13 @@ class CHODEPromptGenerator {
       legion: ["legion", "army", "warriors", "followers", "devotees", "girth-worshippers", "tapping zealots", "diamond-handed cultists", "cultists", "disciples", "believers", "faithful", "congregation", "brotherhood", "sisterhood", "clan", "tribe", "collective"],
       chode: ["chode", "monolith", "veinous", "bulbous", "expansion", "girth", "evolution", "throbbing", "pulsating", "engorged", "phallus", "pillar", "tower", "obelisk", "totem", "idol", "statue", "monument"],
       // ENHANCED: More "dumpster fire" grit + mystical locations
-      temple: ["temple", "cyberpunk shrine", "altar", "sacred", "grimey", "filthy", "rain-slicked alley", "neon-drenched gutter", "discarded electronics", "overgrown data-vines", "cathedral", "church", "mosque", "synagogue", "sanctuary", "shrine", "basilica", "chapel"],
-      void: ["void", "darkness", "abyss", "space", "cosmos", "the great nothingness", "emptiness", "vacuum", "limbo", "netherworld", "underworld", "shadowlands", "beyond", "infinity"],
+      temple: ["temple", "dumpster shrine", "altar", "sacred", "grimey", "filthy", "alley", "gutter", "discarded electronics", "overgrown data-vines", "cathedral", "church", "mosque", "synagogue", "sanctuary", "shrine", "basilica", "chapel"],
+      void: ["void", "darkness", "abyss", "space", "cosmos", "the great nothingness","neon-drenched", "emptiness", "vacuum", "limbo", "netherworld", "underworld", "shadowlands", "beyond", "infinity"],
       data: ["data", "code", "matrix", "digital", "cyber", "network", "glitch", "static", "algorithm", "binary", "bytes", "database", "server", "mainframe", "terminal", "interface", "protocol"],
       // EXPANDED: More meme and crypto entities
-      meme_entities: ["pepe", "wojak", "dogwifhat", "chad", "gigachad", "virgin", "coomer", "doomer", "boomer", "zoomer", "simp", "cope", "seethe", "diamond hands", "paper hands", "ape", "moon", "rocket", "pump", "dump"],
+      meme_entities: ["pepe", "wojak", "dogwifhat", "energy drink", "dorito", "bags", "chad", "gigachad", "virgin", "coomer", "doomer", "boomer", "zoomer", "simp", "cope", "seethe", "diamond hands", "paper hands", "ape", "moon", "rocket", "pump", "dump"],
       // NEW: Power and energy entities
-      power: ["power", "energy", "force", "strength", "might", "dominance", "supremacy", "authority", "control", "influence", "surge", "wave", "pulse", "flow", "current"],
+      power: ["power", "energy", "force", "tap", "slap", "iron grip", "girthquake", "oozedrip", "slap bot", "strength", "might", "dominance", "supremacy", "authority", "control", "influence", "surge", "wave", "pulse", "flow", "current"],
       // NEW: Cosmic and eldritch entities
       cosmic: ["cosmic", "eldritch", "ancient", "primordial", "eternal", "infinite", "omnipotent", "omniscient", "transcendent", "ascended", "enlightened", "awakened"],
       // NEW: Technology entities
@@ -108,43 +246,52 @@ class CHODEPromptGenerator {
     };
 
     this.CORRUPTION_VISUAL_DNA = {
-      // MODIFIED: Each corruption level is now more distinct and filthier
+      // ✨ 0 - Pristine Girth: The untouched promise
       pristine: {
-        palette: ["gaudy gold trim", "pure white", "blinding cyan", "holographic"],
-        atmosphere: "divine clarity, sacred light, pristine energy, clean lines, lens flare",
-        effects: ["holy glow",  "divine aura", "sacred geometry", "shimmering particles"],
-        style_tags: ["divine oracle", "sacred temple", "neon", "holy light", "pristine energy", "ironic perfection"],
-        mood_modifier: "blessed and pure, almost suspiciously so"
+        palette: ["pure white", "iridescent cyan", "glistening opal", "holographic shimmer"],
+        atmosphere: "sterile neon cathedral, divine data purity",
+        effects: ["unblemished monolith", "$GIRTH embryo"],
+        style_tags: ["holy cyberpunk", "sacred neon", "128-bit mythic clarity"],
+        mood_modifier: "suspiciously clean, untouched potential"
       },
+    
+      // 🧩 1 - Cryptic Girth: The whisper before the slap
       cryptic: {
-        palette: ["deep purple", "shadow blue", "ancient gold", "faded neon green"],
-        atmosphere: "mysterious shadows, ancient wisdom, occult energy, grimey back alley",
-        effects: ["mystic graffiti tags","phallus", "arcane energy", "shadowy figures in hoodies", "data ghosts"],
-        style_tags: ["ancient mysteries", "occult symbols", "neon", "shadow realm", "cyberpunk noir"],
-        mood_modifier: "mysterious and ancient, smells like ozone and old pizza"
+        palette: ["glowing violet", "shadow blue", "toxic green", "void black"],
+        atmosphere: "neon back-alley temple, glitching devotion chamber",
+        effects: ["incipient phallus", "mystic glyphs", "low hum"],
+        style_tags: ["cyberpunk mysticism", "neon grime", "pre-slap tension"],
+        mood_modifier: "mysterious, lurking filth, encoded lust"
       },
+    
+      // ⚡ 2 - Flickering Girth: The unstable slap cult begins
       flickering: {
-        palette: ["electric blue", "CRT green", "warning orange", "corroded copper"],
-        atmosphere: "unstable digital realm, flickering data streams, tech malfunction, vhs static",
-        effects: ["exposed wiring", "digital glitches","phallus", "heavy scan lines", "electric sparks"],
-        style_tags: ["cyberpunk clutter", "tech malfunction", "data flicker", "neon", "grimy electronics"],
-        mood_modifier: "unstable and glitching, feels like a brownout"
+        palette: ["electric blue", "copper rust", "burnt orange", "flesh static"],
+        atmosphere: "unstable devotion alley, pixel rot temples",
+        effects: ["growing phallus", "neon fever bloom", "slap shockwaves"],
+        style_tags: ["tap cult rituals", "slap-core neon", "filth-charged mythos"],
+        mood_modifier: "unstable, sweaty, degenerate zeal"
       },
+    
+      // 🧠 3 - Glitched Ominous Girth: The collapse into obsession
       glitched_ominous: {
-        palette: ["warning red", "error crimson", "dark magenta", "bruised purple"],
-        atmosphere: "ominous system failure, corrupted data, digital nightmare, the glow of a red candle chart",
-        effects: ["error cascades", "corrupted pepe meme","phallus", "screaming wojak", "data corruption"],
-        style_tags: ["system failure", "digital corruption", "cyber horror", "neon", "degen despair"],
-        mood_modifier: "ominous and corrupted, NGMI"
+        palette: ["crimson heat", "deep glitch purple", "decay red", "glitch static"],
+        atmosphere: "sacred data failure zone, broken NSFW temple",
+        effects: ["bulbous phallus distortion", "corrupted glyphs", "slap overload fractures"],
+        style_tags: ["degenerate pixel cults", "NSFW cyberpunk", "tap-loop meltdown"],
+        mood_modifier: "corrupted, overstimulated, glitch-throbbing madness"
       },
+    
+      // 🕳️ 4 - Forbidden Fragment: The heretical girth singularity
       forbidden_fragment: {
-        palette: ["void black", "cosmic purple", "eldritch green", "reality-tear red"],
-        atmosphere: "forbidden knowledge, reality breakdown, cosmic horror, 4th wall break",
-        effects: ["reality tears", "non-euclidean geometry","phallus", "sentient bug", "biblically accurate chode"],
-        style_tags: ["cosmic horror", "eldritch truth", "forbidden knowledge", "neon", "meta-narrative glitch"],
-        mood_modifier: "forbidden, eldritch, and worryingly self-aware"
+        palette: ["void black", "sacrificial red", "eldritch purple", "veinous chrome"],
+        atmosphere: "data hellscape, forbidden slap vault, corrupted chode realm",
+        effects: ["anomalous girth relic", "monolith bleeding data", "veinous prophecy fracture"],
+        style_tags: ["eldritch cyberpunk", "NSFW horror surrealism", "slapcore apotheosis"],
+        mood_modifier: "unholy, incomprehensible, sacred filth ascension"
       }
     };
+    
   }
 
   // Main prompt generation method
@@ -319,13 +466,7 @@ class CHODEPromptGenerator {
       negative: negativePrompt,
       model_config: modelConfig,
       content: content, // NEW: Include content for denoising optimization
-      generation_params: {
-        width: 768,
-        height: 768,
-        steps: 30, // Reduced steps for faster generation
-        cfg_scale: 7.0, // Reduced CFG for less strict adherence to prompt
-        sampler_name: "DPM++ 2M Karras"
-      }
+      generation_params: GENERATION_PARAMS
     };
   }
 
@@ -361,73 +502,73 @@ class CHODEPromptGenerator {
   }
 
   getModelConfigForCorruption(corruptionLevel) {
-    // This function returns a complete style package based on the Oracle's mood.
-    // NOTE: LoRAs are suggested but commented out. To use them, add the LoRA call
-    // to the positive prompt and ensure the file is in your models/Lora folder.
+    // This function returns a complete style package, now with a minimal, targeted LoRA stack for each mood.
     const configs = {
       pristine: {
-        modelName: 'oracle-forbidden.safetensors', // Or a high-quality generalist model like JuggernautXL
+        modelName: 'RealitiesEdgeXLLIGHTNING_TURBOV7.safetensors',
         loras: [
-          { name: 'chode_universe', weight: 0.5 },
-          { name: 'cyberpunk_neon', weight: 0.7 },
-          { name: 'nsfw_meme', weight: 0.7 },
-          { name: 'oracle_character', weight: 0.3 }
+          { name: 'cyberpunk_neon', weight: 0.75 },
+          { name: 'comic-strip', weight: 0.8 },
+          { name: 'Lucasarts-Artstyle', weight: 0.55 } // swapped in for CleanAnomalySciFi
         ],
-        stylePrefix: 'hyper-detailed, cinematic lighting, divine shitposting, unsettlingly clean, corporate art installation,',
-        styleSuffix: ', gleaming chrome, holographic perfection, blessed by the algorithm',
-        negativePrompt: 'dark, evil, corrupted, glitch, horror, grime, filth, dirt, messy, blurry, text, watermark'
+        stylePrefix: 'hyper-detailed, comic strip style,divine chrome tapper temples, corporate utopia, eerie serenity, suspicious perfection, unsettling symmetry, anime hero, chode',
+        styleSuffix: ', lcas artstyle, sacred neon glyphs, algorithmic halos, holographic cleanliness, Solana worship shrine',
+        negativePrompt: 'glitch, horror, grime, filth, deformed, messy, chaos, blurry, text, watermark'
       },
+    
       cryptic: {
-        modelName: 'oracle-forbidden.safetensors', // A model fine-tuned on noir and dark themes
+        modelName: 'dreamshaperXL_v21TurboDPMSDE.safetensors',
         loras: [
-          { name: 'chode_universe', weight: 0.5 },
-          { name: 'oracle_character', weight: 0.25 },
-          { name: 'nsfw_meme', weight: 0.8 },
-          { name: 'cyberpunk_neon', weight: 0.4 }
+          { name: 'cyberpunk_neon', weight: 0.4 },
+          { name: 'sdxl_cyberpunk', weight: 0.9 },
+          { name: 'EldritchComicsXL1.2', weight: 0.8 }, // swapped in for CultShrineArchitecture
         ],
-        stylePrefix: 'cyberpunk noir, mysterious graffiti tags, hard shadows, rain-slicked alleyways,',
-        styleSuffix: ', data-ghosts whispering in the static, a single flickering neon sign reflected in a puddle',
-        negativePrompt: 'bright, cheerful, clean, modern, mundane, blurry, text, watermark'
+        stylePrefix: 'graffiti-tagged shrine to girth, cyberpunk noir alleys, sacred circuit boards, secret slap cult, cyberpunk cryptid, chode',
+        styleSuffix: ', dripping neon tags, forgotten Solana backstreets, urban relics, ghosted chat logs',
+        negativePrompt: 'modern, sterile, bright, bland, generic, blurry, watermark'
       },
+    
       flickering: {
+        modelName: 'RealitiesEdgeXLLIGHTNING_TURBOV7.safetensors',
+        loras: [
+          { name: 'cyberpunk_neon', weight: 0.65 },
+          { name: 'aidmaGlitchStyle-v0.1', weight: 0.35 },
+          { name: 'sdxl_cyberpunk', weight: 0.9 },
+          { name: 'EldritchComicsXL1.2', weight: 0.5 }, // swapped in for LowResWojakZine
+        ],
+        stylePrefix: 'CRT artifact temple, flickering, exposed crypto guts, low-res wojak tech chaos, flickering god rays, anime, chode',
+        styleSuffix: ', degen firmware loops, cyberjunk everywhere, Girth Machine hums in Morse',
+        negativePrompt: 'smooth, clean, sterile, soft, blurry, watermark'
+      },
+    
+      glitched_ominous: {
+        modelName: 'juggernautXL_ragnarokBy.safetensors',
+        loras: [
+          { name: 'cyberpunk_neon', weight: 0.5 },
+          { name: 'aidmaGlitchStyle-v0.1', weight: 0.75 },
+          { name: 'sdxl_cyberpunk', weight: 0.75 },
+          { name: 'Lucasarts-Artstyle', weight: 0.45 }, // swapped in for WojakCathedralChaos
+        ],
+        stylePrefix: 'apocalyptic meme cult ruins, glitch, corrupted ledger temples, data bleed from the void, screaming wojaks with holy glow, cyberpunk prophet, chode',
+        styleSuffix: ', lcas artstyle, broken wallet UI as stained glass, red chart candles drip like blood, Solana ticker embedded in stone',
+        negativePrompt: 'hopeful, happy, structured, wholesome, blurry, watermark'
+      },
+    
+      forbidden_fragment: {
         modelName: 'oracle-forbidden.safetensors',
         loras: [
-          { name: 'chode_universe', weight: 0.5 },
           { name: 'cyberpunk_neon', weight: 0.7 },
-          { name: 'nsfw_meme', weight: 0.85 },
-          { name: 'oracle_character', weight: 0.2 }
+          { name: 'aidmaGlitchStyle-v0.1', weight: 0.45 },
+          { name: 'sdxl_cyberpunk', weight: 0.8 },
+          { name: 'Lucasarts-Artstyle', weight: 0.85 }, // swapped in for ForbiddenLoreCodex
         ],
-        stylePrefix: 'unstable digital broadcast, makeshift technology, exposed wiring, sparking circuits, CRT monitor glow,',
-        styleSuffix: ', cyberpunk clutter, VHS static, feels like a brownout, raw degen engineering',
-        negativePrompt: 'stable, clean, perfect, pristine, smooth, blurry, text, watermark'
-      },
-      glitched_ominous: {
-        modelName: 'oracle-forbidden.safetensors', // Same model as flickering, but with a more menacing prompt
-        loras: [
-          { name: 'chode_universe', weight: 0.5 },
-          { name: 'cyberpunk_neon', weight: 0.8 },
-          { name: 'nsfw_meme', weight: 0.9 },
-          { name: 'oracle_character', weight: 0.15 }
-        ],
-        stylePrefix: 'ominous system failure, digital decay, data rot, corrupted pepe meme, screaming wojak in the background,',
-        styleSuffix: ', cyber-horror, the glow of a million red candles on a dead shitcoin chart',
-        negativePrompt: 'clean, bright, happy, safe, hopeful, blessed, text, watermark'
-      },
-      forbidden_fragment: {
-        modelName: 'oracle-forbidden.safetensors', // A model fine-tuned on cosmic horror and abstract concepts
-        loras: [
-          { name: 'chode_universe', weight: 0.4 },
-          { name: 'cyberpunk_neon', weight: 0.9 },
-          { name: 'nsfw_meme', weight: 0.95 },
-          { name: 'oracle_character', weight: 0.15 }
-        ],
-        stylePrefix: 'forbidden oracle knowledge, 4th wall break, meta-narrative glitch, the dev\'s forgotten nightmares, sentient bug,',
-        styleSuffix: ', cosmic horror comics, reality distortion, biblically accurate chode',
-        negativePrompt: 'safe, normal, mundane, understandable, comforting, cute, text, watermark'
+        stylePrefix: 'Girth dimension collapsed, glitch, bugged slab of reality, time-loop shrine to taps, cursed dev log, anime babes, anime villain, chode',
+        styleSuffix: ', lcas artstyle, forbidden command line prophecy, corrupted UI elements as sigils, NSFW lore panels from unknown artists, phallus shaped, backrooms',
+        negativePrompt: 'normal, pleasant, structured, peaceful, digestible, watermark'
       }
     };
 
-    // This part of the logic remains perfect.
+
     return configs[corruptionLevel] || configs.pristine;
   }
 }
@@ -435,9 +576,53 @@ class CHODEPromptGenerator {
 // Initialize the prompt generator
 const promptGenerator = new CHODEPromptGenerator();
 
-// ===================================
-// END CHODE PROMPT GENERATOR
-// ===================================
+// ===============================================
+// END CHODE PROMPT GENERATOR CLASS
+// ===============================================
+
+// ===============================================
+// 🎛️ DENOISING CALCULATION FUNCTIONS
+// ===============================================
+
+/**
+ * Calculate optimal denoising strength for img2img based on corruption level and story content
+ * @param {string} corruptionLevel - The corruption level (pristine, cryptic, etc.)
+ * @param {number} storyWeight - Story content richness (0.5-0.8)
+ * @returns {number} Denoising strength (0.0-1.0)
+ */
+function calculateImg2ImgDenoising(corruptionLevel, storyWeight = 0.5) {
+  if (!ENABLE_DYNAMIC_IMG2IMG_DENOISE) {
+    console.log(`🎛️ IMG2IMG Static Denoising: ${STATIC_IMG2IMG_DENOISE}`);
+    return STATIC_IMG2IMG_DENOISE;
+  }
+
+  // Get base denoising for this corruption level
+  const baseDenoise = IMG2IMG_BASE_DENOISING[corruptionLevel] || 0.65;
+  
+  // Calculate adjustment based on story weight
+  let adjustment = DYNAMIC_DENOISE_ADJUSTMENTS.LOW_STORY_WEIGHT;
+  let influenceLevel = 'STANDARD';
+  
+  if (storyWeight >= STORY_WEIGHT_THRESHOLDS.HIGH) {
+    adjustment = DYNAMIC_DENOISE_ADJUSTMENTS.HIGH_STORY_WEIGHT;
+    influenceLevel = 'MAXIMUM';
+  } else if (storyWeight >= STORY_WEIGHT_THRESHOLDS.MEDIUM) {
+    adjustment = DYNAMIC_DENOISE_ADJUSTMENTS.MEDIUM_STORY_WEIGHT; 
+    influenceLevel = 'HIGH';
+  }
+  
+  // Apply adjustment with minimum threshold
+  const finalDenoising = Math.max(0.45, baseDenoise + adjustment);
+  
+  console.log(`🎛️ IMG2IMG Dynamic Denoising: ${finalDenoising} (story weight: ${storyWeight}, base: ${baseDenoise})`);
+  console.log(`📈 Story influence optimization: ${influenceLevel}`);
+  
+  return finalDenoising;
+}
+
+// ===============================================
+// 🔌 CONNECTION TESTING AND JOB PROCESSING
+// ===============================================
 
 // Test connections
 async function testConnections() {
@@ -458,7 +643,7 @@ async function testConnections() {
     // Test SD connection
     const sdTest = await fetch(`${LOCAL_SD_URL}/sdapi/v1/options`, {
       method: 'GET',
-      timeout: 5000
+      timeout: 7500
     });
     
     if (sdTest.ok) {
@@ -517,7 +702,10 @@ async function processJob(job) {
     }
 
     // Extract job data
-    const { lore_entry_id, story_text, visual_prompt, corruption_level } = job.payload;
+    let { lore_entry_id, story_text, visual_prompt, corruption_level } = job.payload;
+    
+    // 🔒 Safety mapping: ensure corruption level uses underscores
+    corruption_level = normalizeCorruptionLevel(corruption_level);
     
     console.log(`🎯 Generating for corruption level: ${corruption_level}`);
     console.log(`📝 Visual prompt: ${visual_prompt}`);
@@ -527,79 +715,61 @@ async function processJob(job) {
     // Generate enhanced CHODE prompt
     const unifiedPrompt = generateCHODEPrompt(visual_prompt, story_text || visual_prompt, corruption_level);
     
-    // === NEW: Image-to-Image Integration ===
+    // ===============================================
+    // 🖼️ GENERATION MODE DETERMINATION
+    // ===============================================
+    
     let base64ReferenceImage = null;
     let sdApiEndpoint = '/sdapi/v1/txt2img'; // Default to text-to-image
-    let denoisingStrength = 0.65; // Default denoising strength
+    let denoisingStrength = null; // Will be calculated based on mode
 
     // Check if reference images are enabled
     if (!ENABLE_REFERENCE_IMAGES) {
-      console.log('🚫 Reference images disabled for testing - using pure txt2img mode');
+      console.log('🚫 Reference images disabled - using pure txt2img mode');
     }
 
     try {
       // Only attempt reference images if enabled
       if (ENABLE_REFERENCE_IMAGES) {
-        // Attempt to load a random character reference image
-        base64ReferenceImage = await getRandomReferenceImageAsBase64(corruption_level, 'characters');
+        // Smart category selection based on story content
+        const primaryCategory = selectSmartReferenceCategory(unifiedPrompt.content);
+        
+        // Fallback categories in case primary fails
+        const allCategories = ['characters', 'environments', 'memes', 'cosmic'];
+        const fallbackCategories = allCategories.filter(cat => cat !== primaryCategory);
+        const categoriesToTry = [primaryCategory, ...fallbackCategories];
+        
+        console.log(`🖼️ Smart selection: Primary '${primaryCategory}', fallbacks: [${fallbackCategories.join(', ')}]`);
 
-        if (!base64ReferenceImage) {
-          // If no character image, try an environment image
-          console.log('Trying environment reference image...');
-          base64ReferenceImage = await getRandomReferenceImageAsBase64(corruption_level, 'environments');
+        for (const category of categoriesToTry) {
+          base64ReferenceImage = await getRandomReferenceImageAsBase64(category);
+          if (base64ReferenceImage) {
+            console.log(`✅ Found reference image in '${category}' category.`);
+            break; // Found an image, stop searching
+          }
         }
       } else {
         console.log('⚡ Skipping reference image loading - ENABLE_REFERENCE_IMAGES is false');
       }
 
-      // Set denoising based on generation mode
+      // Set generation mode and calculate denoising
       if (base64ReferenceImage) {
-        // IMG2IMG MODE: Use dynamic denoising based on story content (if enabled)
+        // IMG2IMG MODE: Calculate denoising based on story content and corruption
         sdApiEndpoint = '/sdapi/v1/img2img';
-        
-        if (ENABLE_DYNAMIC_IMG2IMG_DENOISE) {
-          const storyWeight = unifiedPrompt.content?.emotional_cues?.story_weight || 0.45;
-          
-          // Base denoising levels per corruption for img2img
-          const baseDenoising = {
-            'pristine': 0.85,
-            'cryptic': 0.85, 
-            'flickering': 0.78,
-            'glitched_ominous': 0.78,
-            'forbidden_fragment': 0.90
-          };
-          
-          const baseDenoise = baseDenoising[corruption_level] || 0.65;
-          
-          // Adjust based on story weight - MORE entities = LOWER denoising = STRONGER story influence
-          if (storyWeight >= 0.8) {
-            denoisingStrength = Math.max(0.45, baseDenoise - 0.20); // Rich story content - lowest denoising
-          } else if (storyWeight >= 0.65) {
-            denoisingStrength = Math.max(0.55, baseDenoise - 0.10); // Medium story content - medium denoising
-          } else {
-            denoisingStrength = baseDenoise; // Minimal story content - higher denoising
-          }
-          
-          console.log(`🎛️ IMG2IMG Dynamic Denoising: ${denoisingStrength} (story weight: ${storyWeight}, base: ${baseDenoise})`);
-          console.log(`📈 Story influence optimization: ${storyWeight >= 0.8 ? 'MAXIMUM' : storyWeight >= 0.65 ? 'HIGH' : 'STANDARD'}`);
-        } else {
-          // Static img2img denoising
-          denoisingStrength = 0.80;
-          console.log(`🎛️ IMG2IMG Static Denoising: ${denoisingStrength}`);
-        }
-        
-        console.log(`🖼️ Using Image-to-Image with denoising strength: ${denoisingStrength}`);
+        const storyWeight = unifiedPrompt.content?.emotional_cues?.story_weight || 0.5;
+        denoisingStrength = calculateImg2ImgDenoising(corruption_level, storyWeight);
+        console.log(`🖼️ Using Image-to-Image mode with denoising: ${denoisingStrength}`);
       } else {
-        // TXT2IMG MODE: Use fixed denoising to avoid reference library copies
+        // TXT2IMG MODE: No denoising parameter needed
         sdApiEndpoint = '/sdapi/v1/txt2img';
-        denoisingStrength = TEXT_TO_IMAGE_DENOISE; // This is NOT actually used in txt2img, but set for logging
-        console.log(`📝 Using Text-to-Image mode (no denoising applied, fixed at: ${TEXT_TO_IMAGE_DENOISE} for reference)`);
+        console.log(`📝 Using Text-to-Image mode (denoising not applicable)`);
         console.warn('⚠️ No suitable reference image found. Using pure text-to-image generation.');
       }
     } catch (imgError) {
       console.error('❌ Error preparing reference image for img2img:', imgError.message);
       console.warn('⚠️ Falling back to text-to-image due to reference image error.');
       base64ReferenceImage = null; // Ensure it's null to trigger txt2img fallback
+      sdApiEndpoint = '/sdapi/v1/txt2img';
     }
     
     // Build LoRA prompt additions
@@ -613,38 +783,27 @@ async function processJob(job) {
       console.log(`🎭 LoRA additions: ${loraTokens}`);
     }
 
-    // Prepare enhanced SD payload using CHODE system
+    // ===============================================
+    // 🚀 STABLE DIFFUSION PAYLOAD PREPARATION  
+    // ===============================================
+    
+    // Build base payload from centralized config
     const sdPayload = {
       prompt: unifiedPrompt.positive + loraPromptAdditions,
       negative_prompt: unifiedPrompt.negative,
-      width: unifiedPrompt.generation_params.width,
-      height: unifiedPrompt.generation_params.height,
-      steps: unifiedPrompt.generation_params.steps,
-      cfg_scale: unifiedPrompt.generation_params.cfg_scale,
-      sampler_name: unifiedPrompt.generation_params.sampler_name,
-      seed: -1,
-      restore_faces: false,
-      tiling: false,
-      enable_hr: false,
+      ...unifiedPrompt.generation_params,
       override_settings: {
         sd_model_checkpoint: modelConfig.modelName
-      },
-      // Add img2img specific parameters if a reference image is available
-      ...(base64ReferenceImage && { 
-        init_images: [base64ReferenceImage],
-        denoising_strength: denoisingStrength,
-        // ControlNet is highly recommended for img2img for better control,
-        // but we'll add it later if needed to keep initial changes focused.
-        // controlnet_units: [
-        //   {
-        //     input_image: base64ReferenceImage,
-        //     model: "control_v11p_sd15_canny [d77e0b57]", // Example Canny model
-        //     module: "canny",
-        //     weight: 1.0
-        //   }
-        // ]
-      })
+      }
     };
+
+    // Add img2img specific parameters if using reference image
+    if (base64ReferenceImage) {
+      sdPayload.init_images = [base64ReferenceImage];
+      sdPayload.denoising_strength = denoisingStrength;
+      // Future: ControlNet integration can be added here
+      // sdPayload.controlnet_units = [...];
+    }
     
     console.log('🚀 Sending ENHANCED CHODE request to Stable Diffusion...');
     console.log(`🎭 Model: ${modelConfig.modelName}`);
@@ -655,7 +814,7 @@ async function processJob(job) {
     
     // Call local Stable Diffusion with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+    const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
     
     const imageResponse = await fetch(`${LOCAL_SD_URL}${sdApiEndpoint}`, {
       method: 'POST',
@@ -845,6 +1004,10 @@ async function pollForJobs() {
   }
 }
 
+// ===============================================
+// 🚀 WORKER STARTUP AND MAIN LOOP
+// ===============================================
+
 // Start the worker
 async function startWorker() {
   console.log('🚀 Starting Enhanced Oracle Image Generation Worker with CHODE Prompt System...');
@@ -864,7 +1027,7 @@ async function startWorker() {
   // Set up polling interval
   setInterval(async () => {
     await pollForJobs();
-  }, 10000); // Poll every 10 seconds
+  }, 20000); // Poll every 20 seconds
 }
 
 // Handle graceful shutdown
@@ -882,4 +1045,30 @@ process.on('SIGTERM', () => {
 startWorker().catch((error) => {
   console.error('🚨 CHODE Worker startup failed:', error);
   process.exit(1);
-}); 
+});
+
+// =====================================================
+// Utility – normalize corruption name variants
+function normalizeCorruptionLevel(level) {
+  if (!level) return 'pristine';
+  
+  const l = level.toLowerCase();
+  
+  // Standard mapping for non-standard corruption levels
+  if (l === 'unstable') return 'flickering';
+  if (l === 'radiant_clarity' || l === 'radiantclarity' || l === 'radiant-clarity') return 'pristine';
+  if (l === 'critical_corruption' || l === 'criticalcorruption' || l === 'critical-corruption') return 'glitched_ominous';
+  if (l === 'data_daemon_possession' || l === 'datadaemonpossession' || l === 'data-daemon-possession') return 'forbidden_fragment';
+  
+  // Handle camelCase and other formats
+  if (l === 'glitchedominous' || l === 'glitched-ominous') return 'glitched_ominous';
+  if (l === 'forbiddenfragment' || l === 'forbidden-fragment') return 'forbidden_fragment';
+  
+  // If it's already a standard value, return it
+  if (['pristine', 'cryptic', 'flickering', 'glitched_ominous', 'forbidden_fragment'].includes(l)) {
+    return l;
+  }
+  
+  // Default to pristine for unknown values
+  return 'pristine';
+} 

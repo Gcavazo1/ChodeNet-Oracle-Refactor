@@ -1,25 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { generateLoreComicPanel, generateLoreAudio } from '../../lib/oracleBackendIntegration';
-import { useOracleFlowStore } from '../../lib/oracleFlowStore';
+import { useOracleLoreStore } from '../../lib/oracleFlowStore';
+import { audioCache } from '../../lib/audioCache';
+import { LoreEntry } from '../../types/lore';
+import OracleLoreSlideshow from './OracleLoreSlideshow';
 import './LoreArchive.css';
-
-interface LoreEntry {
-  id: string;
-  created_at: string;
-  story_title: string;
-  story_text: string;
-  story_summary: string;
-  comic_panel_url?: string;
-  tts_audio_url?: string;
-  oracle_corruption_level: string;
-  view_count: number;
-  like_count: number;
-  share_count: number;
-  input_count: number;
-  lore_cycle_id: string;
-  image_generation_status?: string;
-}
+import './oracle-theme.css';
 
 interface LoreFilter {
   dateRange: 'all' | 'week' | 'month';
@@ -30,7 +17,7 @@ interface LoreFilter {
 export const LoreArchive: React.FC = () => {
   const [loreEntries, setLoreEntries] = useState<LoreEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<LoreEntry[]>([]);
-  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,12 +31,16 @@ export const LoreArchive: React.FC = () => {
     sortBy: 'newest'
   });
 
-  const { highlightedLoreId, clearHighlightedLoreEntry } = useOracleFlowStore(
+  const { highlightedLoreId, clearHighlightedLoreEntry } = useOracleLoreStore(
     (state) => ({
       highlightedLoreId: state.highlightedLoreId,
       clearHighlightedLoreEntry: state.clearHighlightedLoreEntry
     })
   );
+
+  // Slideshow state
+  const [showSlideshow, setShowSlideshow] = useState(false);
+  const [slideshowInitialEntryId, setSlideshowInitialEntryId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     loadLoreEntries();
@@ -76,7 +67,7 @@ export const LoreArchive: React.FC = () => {
 
   useEffect(() => {
     // Real-time subscription for lore updates
-    let channel: any = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     
     const setupSubscription = () => {
       // Only create subscription if one doesn't exist
@@ -189,7 +180,10 @@ export const LoreArchive: React.FC = () => {
   };
 
   const handleEntryClick = async (entry: LoreEntry) => {
-    setSelectedEntry(entry);
+    // Use slideshow view instead of old modal
+    console.log('📋 [CARD CLICK] Card clicked, opening slideshow view:', entry.id);
+    setSlideshowInitialEntryId(entry.id);
+    setShowSlideshow(true);
     
     // Increment view count
     try {
@@ -205,6 +199,22 @@ export const LoreArchive: React.FC = () => {
     } catch (error) {
       console.warn('Failed to update view count:', error);
     }
+  };
+
+  // New function for expanding to slideshow view
+  const handleExpandToSlideshow = (entry: LoreEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🎭 [SLIDESHOW] Expanding entry for slideshow view:', entry.id);
+    setSlideshowInitialEntryId(entry.id);
+    setShowSlideshow(true);
+  };
+
+  // New function for image click expansion
+  const handleImageExpand = (entry: LoreEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🖼️ [IMAGE EXPAND] Image clicked for slideshow view:', entry.id);
+    setSlideshowInitialEntryId(entry.id);
+    setShowSlideshow(true);
   };
 
   const handleLikeEntry = async (entryId: string) => {
@@ -268,7 +278,7 @@ export const LoreArchive: React.FC = () => {
         entry.id,
         entry.story_text,
         entry.story_summary || "A mystical cosmic scene",
-        entry.oracle_corruption_level as any
+        entry.oracle_corruption_level as 'pristine' | 'cryptic' | 'flickering' | 'glitched_ominous' | 'forbidden_fragment'
       );
 
       if (result.success) {
@@ -301,8 +311,8 @@ export const LoreArchive: React.FC = () => {
     }
   };
 
-  const handleGenerateAudio = async (entry: LoreEntry, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleGenerateAudio = async (entry: LoreEntry, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     
     if (generatingAudio.has(entry.id)) {
       console.log(`🎵 Audio already generating for entry: ${entry.id}`);
@@ -317,6 +327,29 @@ export const LoreArchive: React.FC = () => {
     setGeneratingAudio(prev => new Set(prev).add(entry.id));
 
     try {
+      // 1. First check cache (both local IndexedDB and backend)
+      console.log(`🎵 [CACHE] Checking cache before API call...`);
+      const cachedAudioUrl = await audioCache.getCachedAudio(entry.id, entry.story_text);
+      
+      if (cachedAudioUrl) {
+        console.log(`✅ [CACHE HIT] Using cached audio - no API call needed!`);
+        console.log(`✅ [CACHE HIT] Oracle voice restored: "${entry.story_title}"`);
+        
+        // Update state with cached audio
+        setLoreEntries(prev => 
+          prev.map(e => 
+            e.id === entry.id 
+              ? { ...e, tts_audio_url: cachedAudioUrl }
+              : e
+          )
+        );
+
+        showSuccessNotification(entry.id, 'audio');
+        return; // Exit early - no API call needed!
+      }
+
+      // 2. No cache found - make API call
+      console.log(`🎵 [CACHE MISS] No cached audio found, calling ElevenLabs API...`);
       console.log(`🎵 [API CALL] Invoking elevenlabs-tts-generator Edge Function...`);
       
       const result = await generateLoreAudio(
@@ -328,6 +361,10 @@ export const LoreArchive: React.FC = () => {
         console.log(`✅ [SUCCESS] Audio narration generated successfully!`);
         console.log(`✅ [SUCCESS] Audio URL: ${result.audio_url}`);
         console.log(`✅ [SUCCESS] Oracle now speaks: "${entry.story_title}"`);
+        
+        // 3. Cache the newly generated audio for future use
+        console.log(`💾 [CACHE] Storing audio in cache for future visits...`);
+        await audioCache.storeCachedAudio(entry.id, entry.story_text, result.audio_url);
         
         // Update the local state with the new audio URL
         setLoreEntries(prev => 
@@ -469,7 +506,7 @@ export const LoreArchive: React.FC = () => {
         <div className="filter-section">
           <select
             value={filter.dateRange}
-            onChange={(e) => setFilter(prev => ({ ...prev, dateRange: e.target.value as any }))}
+            onChange={(e) => setFilter(prev => ({ ...prev, dateRange: e.target.value as LoreFilter['dateRange'] }))}
             className="filter-select"
           >
             <option value="all">All Time</option>
@@ -479,7 +516,7 @@ export const LoreArchive: React.FC = () => {
 
           <select
             value={filter.corruptionLevel}
-            onChange={(e) => setFilter(prev => ({ ...prev, corruptionLevel: e.target.value as any }))}
+            onChange={(e) => setFilter(prev => ({ ...prev, corruptionLevel: e.target.value as LoreFilter['corruptionLevel'] }))}
             className="filter-select"
           >
             <option value="all">All Corruption Levels</option>
@@ -492,7 +529,7 @@ export const LoreArchive: React.FC = () => {
 
           <select
             value={filter.sortBy}
-            onChange={(e) => setFilter(prev => ({ ...prev, sortBy: e.target.value as any }))}
+            onChange={(e) => setFilter(prev => ({ ...prev, sortBy: e.target.value as LoreFilter['sortBy'] }))}
             className="filter-select"
           >
             <option value="newest">Newest First</option>
@@ -526,6 +563,15 @@ export const LoreArchive: React.FC = () => {
             className={`lore-card corruption-${entry.oracle_corruption_level} ${entry.id === highlightedLoreId ? 'highlighted' : ''}`}
             onClick={() => handleEntryClick(entry)}
           >
+            {/* Add expand button */}
+            <button 
+              className="expand-story-btn"
+              onClick={(e) => handleExpandToSlideshow(entry, e)}
+              title="Expand to slideshow view"
+            >
+              ⚡
+            </button>
+
             <div className="card-header">
               <h3 className="lore-title">{entry.story_title}</h3>
               <div 
@@ -540,13 +586,15 @@ export const LoreArchive: React.FC = () => {
             <div className="card-content">
               <p className="lore-summary">{entry.story_summary}</p>
               
-              {/* Enhanced Comic Panel Section */}
+              {/* Enhanced Comic Panel Section with Image Click */}
               {entry.comic_panel_url ? (
                 <div className="comic-preview">
                   <img 
                     src={entry.comic_panel_url} 
                     alt="Comic panel"
                     className="panel-thumbnail"
+                    onClick={(e) => handleImageExpand(entry, e)}
+                    title="Click to view in slideshow"
                   />
                   {successNotifications.has(`${entry.id}-panel`) && (
                     <div className="success-flash">
@@ -638,96 +686,35 @@ export const LoreArchive: React.FC = () => {
         </div>
       )}
 
-      {selectedEntry && (
-        <div className="lore-modal-overlay" onClick={() => setSelectedEntry(null)}>
-          <div className="lore-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedEntry.story_title}</h2>
-              <button 
-                className="close-modal"
-                onClick={() => setSelectedEntry(null)}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="modal-content">
-              <div className="story-text">
-                {selectedEntry.story_text}
-              </div>
-              
-              {selectedEntry.comic_panel_url && (
-                <div className="comic-panel-full">
-                  <img 
-                    src={selectedEntry.comic_panel_url} 
-                    alt="Full comic panel"
-                    className="panel-full"
-                  />
-                </div>
-              )}
-              
-              {selectedEntry.tts_audio_url && (
-                <div className="audio-player">
-                  <div className="audio-controls-enhanced">
-                    <div className="audio-info">
-                      <div className="audio-title">🎵 Oracle Narration</div>
-                      <div className="audio-duration">Mystical storytelling experience</div>
-                    </div>
-                    <div className="audio-actions">
-                      <button 
-                        className="audio-action-btn" 
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = selectedEntry.tts_audio_url!;
-                          link.download = `${selectedEntry.story_title.replace(/[^a-zA-Z0-9]/g, '_')}_oracle_narration.mp3`;
-                          link.click();
-                        }}
-                      >
-                        📥 Download
-                      </button>
-                      <button 
-                        className="audio-action-btn" 
-                        onClick={() => {
-                          if (navigator.share) {
-                            navigator.share({
-                              title: `Oracle Lore: ${selectedEntry.story_title}`,
-                              text: selectedEntry.story_summary,
-                              url: window.location.href
-                            });
-                          } else {
-                            navigator.clipboard.writeText(window.location.href);
-                            // You could add a toast notification here
-                            console.log('Lore URL copied to clipboard!');
-                          }
-                        }}
-                      >
-                        🔗 Share
-                      </button>
-                    </div>
-                  </div>
-                  <audio 
-                    controls 
-                    preload="metadata"
-                    style={{ width: '100%' }}
-                  >
-                    <source src={selectedEntry.tts_audio_url} type="audio/mpeg" />
-                    Your browser does not support audio playback.
-                  </audio>
-                </div>
-              )}
-            </div>
-            
-            <div className="modal-footer">
-              <div className="modal-stats">
-                <span>👁️ {selectedEntry.view_count} views</span>
-                <span>💜 {selectedEntry.like_count} likes</span>
-                <span>📤 {selectedEntry.share_count} shares</span>
-                <span>👥 {selectedEntry.input_count} contributors</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
+
+      {/* Oracle Lore Slideshow */}
+      <OracleLoreSlideshow
+        isOpen={showSlideshow}
+        entries={filteredEntries}
+        initialEntryId={slideshowInitialEntryId}
+        onClose={() => setShowSlideshow(false)}
+        onGenerateComicPanel={async (entry: LoreEntry) => {
+          return new Promise<void>((resolve) => {
+            handleGenerateComicPanel(entry, {} as React.MouseEvent);
+            resolve();
+          });
+        }}
+        onGenerateAudio={async (entry: LoreEntry) => {
+          return new Promise<void>((resolve) => {
+            handleGenerateAudio(entry);
+            resolve();
+          });
+        }}
+        onLike={async (entryId: string) => {
+          return new Promise<void>((resolve) => {
+            handleLikeEntry(entryId);
+            resolve();
+          });
+        }}
+        generatingPanels={generatingPanels}
+        generatingAudio={generatingAudio}
+      />
     </div>
   );
-}; 
+};

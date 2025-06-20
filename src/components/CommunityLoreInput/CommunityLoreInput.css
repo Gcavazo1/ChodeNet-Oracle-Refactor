@@ -364,4 +364,195 @@
     padding: 14px 20px;
     font-size: 1rem;
   }
+}
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 500px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+.toast-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(6, 214, 160, 0.9));
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.toast-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(251, 191, 36, 0.9));
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.toast-message {
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Wallet Authentication Status */
+.auth-warning, .auth-success {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+  border: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.auth-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 214, 160, 0.1));
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.warning-icon, .success-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.warning-content, .success-content {
+  flex: 1;
+}
+
+.warning-content strong, .success-content strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.auth-warning .warning-content strong {
+  color: #F59E0B;
+}
+
+.auth-success .success-content strong {
+  color: #10B981;
+}
+
+.warning-content p, .success-content p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Reward inline display enhancement */
+.reward-inline {
+  color: #10B981;
+  font-weight: 600;
+  font-size: 0.8rem;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Disabled state styling for wallet requirement */
+.submit-contribution:disabled[title*="Connect"] {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(251, 191, 36, 0.3));
+  border: 2px solid rgba(245, 158, 11, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Enhanced textarea disabled state */
+.story-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(128, 128, 128, 0.3);
+}
+
+.story-input:disabled::placeholder {
+  color: rgba(245, 158, 11, 0.6);
+  font-weight: 500;
+}
+
+/* Responsive design for toast and auth status */
+@media (max-width: 768px) {
+  .toast-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .toast-content {
+    padding: 12px 16px;
+  }
+  
+  .toast-message {
+    font-size: 13px;
+  }
+  
+  .auth-warning, .auth-success {
+    margin: 12px 0;
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .warning-icon, .success-icon {
+    font-size: 1.3rem;
+  }
+  
+  .warning-content strong, .success-content strong {
+    font-size: 0.9rem;
+  }
+  
+  .warning-content p, .success-content p {
+    font-size: 0.85rem;
+  }
 } 
