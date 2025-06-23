@@ -23,8 +23,6 @@ export * from './CommunityFeatures';
 
 export { CommunityGirthTracker } from './CommunityMetrics/CommunityGirthTracker';
 export { PixelBorder, PixelText, PixelDivider } from './PixelArt/PixelBorder';
-export { SpecialReport } from './SpecialReport/SpecialReport';
-export { TokenInfoPanel } from './TokenInfoPanel/TokenInfoPanel';
 export { NFTShowcaseModal } from './NFTShowcaseModal';
 export { PlayerProfilePanel } from './PlayerProfilePanel/PlayerProfilePanel';
 export { ProfileManager } from './ProfileManager/ProfileManager';

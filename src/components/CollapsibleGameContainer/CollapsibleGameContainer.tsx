@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { realTimeOracle, OracleResponse } from '../../lib/realTimeOracleEngine';
 import { setGameIframe, receiveGameEvent } from '../../lib/gameEventHandler';
+import { HackerText } from '../../intro/HackerText';
 import './CollapsibleGameContainer.css';
 
 export interface GameState {
@@ -169,8 +170,8 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
       // Send to parent component (Dashboard)
       onGameMessage?.(message);
       
-    } catch (error) {
-      console.error('❌ [PARSE] Error parsing game message:', error);
+    } catch (err: any) {
+      console.error('❌ [PARSE] Error parsing game message:', err);
       console.log('📋 [DEBUG] Raw message data that failed to parse:', event.data);
     }
   }, [onGameMessage]);
@@ -292,18 +293,14 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
         response_id: oracleMessage.response_id,
         timestamp: oracleMessage.timestamp
       });
-    } catch (error) {
+    } catch (err: any) {
       console.error('❌ [SEND] Error sending Oracle response to game:', {
-        error: error.message,
+        error: err.message,
         response_id: oracleResponse.response_id,
-        stack: error.stack
+        stack: err.stack
       });
     }
   }, []);
-
-
-
-
 
   // Notify parent of game state changes
   useEffect(() => {
@@ -403,11 +400,11 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
         console.log('✅ [SEND] Message sent to docked game successfully:', {
           message_type: message.type
         });
-      } catch (error) {
+      } catch (err: any) {
         console.error('❌ [SEND] Error sending message to docked game:', {
-          error: error.message,
+          error: err.message,
           message_type: message.type,
-          stack: error.stack
+          stack: err.stack
         });
       }
     }
@@ -427,11 +424,11 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
         console.log('✅ [SEND] Message sent to popout game successfully:', {
           message_type: message.type
         });
-      } catch (error) {
+      } catch (err: any) {
         console.error('❌ [SEND] Error sending message to popout game:', {
-          error: error.message,
+          error: err.message,
           message_type: message.type,
-          stack: error.stack
+          stack: err.stack
         });
       }
     }
@@ -740,9 +737,12 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
 
   const status = getConnectionDisplay();
 
-
-
-
+  // Extend window interface for Godot callbacks
+  (window as any).chodeNetGodotCallbacks = {
+    godotReceiveMessageFromParent: (msg: string) => {
+      console.log('Message from Godot:', msg);
+    }
+  };
 
   return (
     <div 
@@ -753,7 +753,9 @@ export const CollapsibleGameContainer: React.FC<CollapsibleGameContainerProps> =
       <div className="game-header">
         <div className="game-title">
           <span className="game-icon">🎮</span>
-          <span className="title-text">$CHODE Tapper - Genesis Demo</span>
+          <span className="title-text">
+            <HackerText text="$CHODE Tapper - Genesis Demo" />
+          </span>
         </div>
         
         <div className="game-stats">

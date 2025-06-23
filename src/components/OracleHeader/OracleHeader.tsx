@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { HackerText } from '../../intro/HackerText';
 import { WalletHeaderButton } from '../WalletConnector/WalletHeaderButton';
 import { ProfileManager } from '../ProfileManager/ProfileManager';
-import { UserProfile, GirthBalance, OracleShards } from '../../services/siws';
-import { User, ChevronDown, Settings, LogOut, Wallet, Zap } from 'lucide-react';
+import { UserProfile, GirthBalance } from '../../services/siws';
+import { User, ChevronDown, Settings, LogOut, Wallet } from 'lucide-react';
 import './OracleHeader.css';
 import { useSIWS } from '../../lib/useSIWS';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { GlitchButton } from './GlitchButton';
 
 interface OracleHeaderProps {
   onSectionChange?: (section: string) => void;
@@ -42,7 +44,7 @@ export const OracleHeader: React.FC<OracleHeaderProps> = ({
     onSectionChange?.(section);
   };
 
-  const handleProfileUpdate = (profile: UserProfile) => {
+  const handleProfileUpdate = (profile: any) => {
     // Profile updates are now handled by useSIWS context
     // This is kept for the ProfileManager component
   };
@@ -194,7 +196,9 @@ export const OracleHeader: React.FC<OracleHeaderProps> = ({
           <div className="oracle-logo">
             <span className="cosmic-glyph">🔮</span>
             <div className="brand-text-container">
-              <span className="brand-text">CHODE-NET</span>
+              <span className="brand-text">
+                <HackerText text="CHODE-NET" />
+              </span>
               <span className="brand-subtitle">ORACLE</span>
             </div>
           </div>
@@ -202,14 +206,14 @@ export const OracleHeader: React.FC<OracleHeaderProps> = ({
         
         <nav className="main-navigation">
           {navigationSections.map((section) => (
-            <button 
+            <GlitchButton
               key={section.id}
-              className={`nav-tab ${activeSection === section.id ? 'active' : ''}`}
+              active={activeSection === section.id}
               onClick={() => handleSectionChange(section.id)}
-            >
-              <span className="nav-icon">{section.icon}</span>
-              <span className="nav-label">{section.label}</span>
-            </button>
+              style={{ margin: '0 0.25rem' }}
+              label={section.label}
+              icon={section.icon}
+            />
           ))}
         </nav>
         

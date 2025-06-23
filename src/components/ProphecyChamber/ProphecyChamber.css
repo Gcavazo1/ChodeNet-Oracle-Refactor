@@ -1,9 +1,9 @@
 /* ProphecyChamber.css */
 .prophecy-chamber {
   width: 100%;
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
+  max-width: 950px;
+  margin: 1.5rem auto;
+  padding: 1.5rem 2rem;
   background: linear-gradient(
     to bottom,
     rgba(30, 30, 40, 0.9),
@@ -30,8 +30,8 @@
       90deg,
       transparent,
       transparent 50px,
-      rgba(138, 43, 226, 0.1) 50px,
-      rgba(138, 43, 226, 0.1) 51px
+      rgba(138, 43, 226, 0.05) 50px,
+      rgba(138, 43, 226, 0.05) 51px
     );
   pointer-events: none;
   animation: scan-lines 10s linear infinite;
@@ -39,273 +39,137 @@
 }
 
 /* ======================================
-   CORRUPTION LEVEL STYLES
+   NEW LAYOUT & STYLES
    ====================================== */
-
-/* Pristine - Default clean Oracle state */
-.prophecy-display.corruption-pristine .prophecy-text {
-  color: #00f0ff;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-  font-family: inherit;
+.oracle-options {
+  display: flex;
+  gap: 2rem;
+  margin: 2rem 0;
+  align-items: stretch;
 }
 
-/* Cryptic - Ancient mystical corruption */
-.prophecy-display.corruption-cryptic .prophecy-text {
-  font-family: 'Old English Text MT', 'Times New Roman', serif;
-  color: #8a2be2;
-  text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
-  letter-spacing: 2px;
-  animation: mystical-glow 3s ease-in-out infinite;
+.option-section {
+  flex: 1;
+  padding: 1.5rem;
+  border: 1px solid rgba(138, 43, 226, 0.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
 }
 
-/* Flickering - Unstable Oracle connection */
-.prophecy-display.corruption-flickering .prophecy-text {
-  color: #ffaa00;
-  text-shadow: 
-    0 0 5px rgba(255, 170, 0, 0.5),
-    0 0 10px rgba(255, 170, 0, 0.3);
-  animation: 
-    flicker-text 0.5s infinite,
-    unstable-glow 2s ease-in-out infinite;
-  font-family: inherit;
-  letter-spacing: 1px;
+.option-section:hover {
+  border-color: rgba(138, 43, 226, 0.4);
+  box-shadow: 0 0 15px rgba(138, 43, 226, 0.15);
 }
 
-.prophecy-display.corruption-flickering::before {
-  content: "⚡ CONNECTION UNSTABLE ⚡";
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-1deg);
-  color: #ffaa00;
-  font-size: 0.8rem;
+.option-section h3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  color: #c4b5fd;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(138, 43, 226, 0.2);
+}
+
+.option-divider {
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(138, 43, 226, 0.4),
+    transparent
+  );
+  opacity: 0.5;
+}
+
+/* Free Consultation Section */
+.free-consultation {
+  background: rgba(138, 43, 226, 0.05);
+}
+
+/* Advanced Crafting Section */
+.advanced-crafting {
+  background: rgba(50, 50, 60, 0.2);
+  justify-content: space-between;
+}
+
+.advanced-description {
+  color: #a7a1b9;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.advanced-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #c4b5fd;
+}
+
+.feature-icon {
+  color: #8b5cf6;
+}
+
+.coming-soon-notice {
+  text-align: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0,0,0,0.2);
+  border: 1px dashed rgba(138, 43, 226, 0.3);
+  border-radius: 4px;
+}
+.notice-icon {
+  font-size: 1.2rem;
+}
+.coming-soon-notice p {
+  margin: 0.25rem 0 0 0;
   font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  color: #a7a1b9;
+}
+.notice-details {
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: #7b7194;
+}
+
+.advanced-ritual-btn.disabled {
+  background: linear-gradient(135deg, #2d3748, #4a5568);
+  color: #a0aec0;
+  cursor: not-allowed;
   opacity: 0.7;
-  animation: flicker-warning 1s infinite;
-}
-
-/* Glitched Ominous - Heavy digital corruption */
-.prophecy-display.corruption-glitched_ominous .prophecy-text {
-  color: #ff3131;
-  text-shadow: 
-    -2px 0 #ff00ff, 
-    2px 0 #00f0ff,
-    0 2px #ffff00;
-  animation: 
-    glitch-text 0.2s infinite,
-    color-shift 1s infinite;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 1px;
-}
-
-.prophecy-display.corruption-glitched_ominous::before {
-  content: "⚠️ CORRUPTION DETECTED ⚠️";
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-2deg);
-  color: #ff3131;
-  font-size: 0.8rem;
+  border: none;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
   font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  opacity: 0.8;
-  animation: warning-pulse 1.5s infinite;
-}
-
-/* Forbidden Fragment - Maximum corruption */
-.prophecy-display.corruption-forbidden_fragment .prophecy-text {
-  background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff, #ff0000);
-  background-size: 400% 400%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 
-    2px 2px #ff0000,
-    -2px -2px #00ff00,
-    1px -1px #0000ff;
-  animation: 
-    forbidden-glitch 0.1s infinite,
-    rainbow-shift 2s linear infinite;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 3px;
-  word-spacing: 5px;
-  font-weight: bold;
-}
-
-.prophecy-display.corruption-forbidden_fragment::before {
-  content: "🚫 [CLASSIFIED BY ORDER OF THE CHODEFATHER] 🚫";
-  position: absolute;
-  top: 5px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-3deg);
-  color: #ff0000;
-  font-size: 0.75rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  opacity: 0.9;
-  animation: forbidden-stamp 1s infinite;
-  z-index: 10;
-}
-
-.prophecy-display.corruption-forbidden_fragment::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 0, 0, 0.1) 10px,
-      rgba(255, 0, 0, 0.1) 20px
-    );
-  animation: forbidden-overlay 10s linear infinite;
-  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 /* ======================================
    ANIMATIONS
    ====================================== */
-
-@keyframes mystical-glow {
-  0%, 100% { 
-    text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
-  }
-  50% { 
-    text-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
-  }
-}
-
-@keyframes flicker-text {
-  0%, 100% { 
-    opacity: 1; 
-    text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
-  }
-  25% { 
-    opacity: 0.7; 
-    text-shadow: 0 0 2px rgba(255, 170, 0, 0.3);
-  }
-  50% { 
-    opacity: 1; 
-    text-shadow: 0 0 8px rgba(255, 170, 0, 0.7);
-  }
-  75% { 
-    opacity: 0.8; 
-    text-shadow: 0 0 3px rgba(255, 170, 0, 0.4);
-  }
-}
-
-@keyframes unstable-glow {
-  0%, 100% { 
-    filter: brightness(1) saturate(1);
-  }
-  50% { 
-    filter: brightness(1.2) saturate(1.3);
-  }
-}
-
-@keyframes flicker-warning {
-  0%, 100% {
-    opacity: 0.7;
-    color: #ffaa00; 
-  }
-  50% {
-    opacity: 0.3; 
-    color: #ff8800; 
-  }
-}
-
-@keyframes glitch-text {
-  0% {
-    transform: translate(0);
-    text-shadow: -2px 0 #ff00ff, 2px 0 #00f0ff;
-  }
-  25% {
-    transform: translate(-2px, 2px);
-    text-shadow: 2px 0 #ff00ff, -2px 0 #00f0ff;
-  }
-  50% {
-    transform: translate(2px, -2px);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00f0ff;
-  }
-  75% {
-    transform: translate(-1px, 1px);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00f0ff;
-  }
-  100% {
-    transform: translate(0);
-    text-shadow: -2px 0 #ff00ff, 2px 0 #00f0ff;
-  }
-}
-
-@keyframes color-shift {
-  0% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-@keyframes warning-pulse {
-  0%, 100% {
-    opacity: 0.8; 
-    color: #ff3131; 
-  }
-  50% { 
-    opacity: 1; 
-    color: #ffffff; 
-  }
-}
-
-@keyframes forbidden-glitch {
-  0%, 100% { transform: translate(0); }
-  10% { transform: translate(-2px, -2px); }
-  20% { transform: translate(2px, 2px); }
-  30% { transform: translate(-2px, 2px); }
-  40% { transform: translate(2px, -2px); }
-  50% { transform: translate(-1px, 1px); }
-  60% { transform: translate(1px, -1px); }
-  70% { transform: translate(-1px, -1px); }
-  80% { transform: translate(1px, 1px); }
-  90% { transform: translate(-1px, 2px); }
-}
-
-@keyframes rainbow-shift {
-  0% { background-position: 0% 0%; }
-  25% { background-position: 100% 0%; }
-  50% { background-position: 100% 100%; }
-  75% { background-position: 0% 100%; }
-  100% { background-position: 0% 0%; }
-}
-
-@keyframes forbidden-stamp {
-  0%, 100% { 
-    opacity: 0.9; 
-    transform: translateX(-50%) rotate(-3deg) scale(1); 
-  }
-  50% { 
-    opacity: 0.5; 
-    transform: translateX(-50%) rotate(-3deg) scale(1.05); 
-  }
-}
-
-@keyframes forbidden-overlay {
-  0% { background-position: 0 0; }
-  100% { background-position: 100% 100%; }
-}
-
 @keyframes scan-lines {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(100%);
-  }
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
 }
 
 .prophecy-header {
@@ -313,12 +177,12 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0rem; /* Reduced */
 }
 
 .prophecy-header h2 {
   color: #b19cd9;
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   font-weight: bold;
   text-align: center;
   letter-spacing: 2px;
@@ -342,199 +206,63 @@
   }
 }
 
-.prophecy-display {
-  position: relative;
-  margin: 2rem 0;
-  padding: 2rem;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 4px;
-  min-height: 120px;
-  overflow: hidden;
-}
-
-.prophecy-display::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    linear-gradient(
-    45deg,
-      transparent 30%,
-      rgba(0, 240, 255, 0.1) 50%,
-      transparent 70%
-    );
-  animation: hologram-effect 5s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes hologram-effect {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.prophecy-text {
-  position: relative;
-  z-index: 2;
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: #00f0ff;
-  text-align: center;
-  padding: 1rem;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.summon-button {
-  width: 100%;
-  padding: 1rem 2rem;
-  background: linear-gradient(
-    135deg,
-    rgba(138, 43, 226, 0.2),
-    rgba(138, 43, 226, 0.4)
-  );
-  border: 2px solid rgba(138, 43, 226, 0.6);
-  border-radius: 8px;
-  color: #b19cd9;
-  font-size: 1.1rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.summon-button:hover:not(:disabled) {
-  background: linear-gradient(
-    135deg,
-    rgba(138, 43, 226, 0.4),
-    rgba(138, 43, 226, 0.6)
-  );
-  border-color: rgba(138, 43, 226, 0.8);
-  color: #d4c5f0;
-  box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
-}
-
-.summon-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.summon-button.generating {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(138, 43, 226, 0.6);
-  }
-}
-
-.sparkle-icon {
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-@keyframes sparkle {
-  0%, 100% {
-    transform: rotate(0deg) scale(1);
-    opacity: 0.8;
-  }
-  25% {
-    transform: rotate(90deg) scale(1.1);
-    opacity: 1;
-  }
-  50% {
-    transform: rotate(180deg) scale(1);
-    opacity: 0.8;
-  }
-  75% {
-    transform: rotate(270deg) scale(1.1);
-    opacity: 1;
-  }
-}
-
-@media (max-width: 768px) {
-  .prophecy-chamber {
-    margin: 1rem;
-    padding: 1rem;
-  }
-
-  .prophecy-header h2 {
-    font-size: 1.3rem;
-  }
-
-  .prophecy-text {
-    font-size: 1rem;
-  }
-
-  .summon-button {
-    font-size: 1rem;
-    padding: 0.8rem 1.5rem;
-  }
-}
-
 .ritual-topic-indicator {
-  margin-top: 1rem;
-  padding: 0.5rem;
+  margin-bottom: 1.5rem; /* Adjusted */
+  padding: 0.75rem;
   background: rgba(138, 43, 226, 0.1);
   border: 1px solid rgba(138, 43, 226, 0.3);
   border-radius: 4px;
   text-align: center;
   color: #b19cd9;
   font-size: 0.9rem;
-  animation: pulse-indicator 2s infinite;
+  animation: pulse-indicator 3s infinite;
 }
+.topic-label {
+  font-weight: bold;
+  color: #d4c5f0;
+  margin-right: 0.5rem;
+}
+.topic-name {
+  font-family: "Courier New", monospace;
+  background: rgba(0,0,0,0.3);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
 
 @keyframes pulse-indicator {
   0%, 100% {
-    opacity: 0.7;
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.2);
   }
   50% {
-    opacity: 1;
+    box-shadow: 0 0 12px rgba(138, 43, 226, 0.4);
   }
-}
-
-/* Prophecy Chamber */
-
-.prophecy-chamber {
-  position: relative;
-}
-
-.chamber-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
 }
 
 /* Generation Interface */
 .generation-interface {
   text-align: center;
-  padding: 40px 20px;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: center;
 }
 
 .oracle-meditation {
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .oracle-eye {
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
 }
 
 .eye-glow {
-  font-size: 60px;
+  font-size: 48px;
   display: inline-block;
   transition: all 0.3s ease;
   filter: drop-shadow(0 0 10px rgba(107, 70, 193, 0.5));
@@ -551,24 +279,25 @@
 }
 
 .meditation-text {
-  font-size: 16px;
+  font-size: 14px;
   color: #C4B5FD;
   font-style: italic;
-  margin-bottom: 20px;
+  min-height: 20px;
 }
 
 .generate-btn {
   background: linear-gradient(135deg, #6B46C1, #8B5CF6);
   color: white;
   border: none;
-  padding: 15px 30px;
-  border-radius: 25px;
-  font-size: 16px;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   margin: 0 auto;
   box-shadow: 0 4px 15px rgba(107, 70, 193, 0.3);
@@ -599,225 +328,48 @@
 }
 
 .no-topic-warning {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   margin-top: 20px;
   padding: 15px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 8px;
   color: #FCA5A5;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-}
-
-/* Prophecy Display */
-.prophecy-display {
-  background: rgba(30, 27, 75, 0.5);
-  border: 2px solid #6B46C1;
-  border-radius: 15px;
-  padding: 20px;
-  margin-bottom: 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-.prophecy-display::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(107, 70, 193, 0.1), transparent);
-  animation: prophecy-shimmer 3s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes prophecy-shimmer {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.prophecy-header {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #475569;
-  padding-bottom: 15px;
-}
-
-.prophecy-header h4 {
-  margin: 0 0 10px 0;
-  color: #A855F7;
-  font-size: 18px;
-}
-
-.prophecy-meta {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.topic-tag,
-.corruption-level,
-.timestamp {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.topic-tag {
-  background: linear-gradient(135deg, #6B46C1, #8B5CF6);
-  color: white;
-  text-transform: capitalize;
-}
-
-.corruption-level {
-  background: linear-gradient(135deg, #EC4899, #F472B6);
-  color: white;
-}
-
-.timestamp {
-  background: rgba(156, 163, 175, 0.2);
-  color: #D1D5DB;
-}
-
-.prophecy-content {
-  position: relative;
-  z-index: 1;
-}
-
-.prophecy-text {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #E0E7FF;
-  font-style: italic;
-  margin-bottom: 20px;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.3);
-  border-left: 4px solid #6B46C1;
-  border-radius: 8px;
-}
-
-/* Visual Manifestation */
-.prophecy-visual {
-  margin-top: 25px;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  border: 1px solid #475569;
-}
-
-.prophecy-visual h5 {
-  margin: 0 0 15px 0;
-  color: #A855F7;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.prophecy-visual h5::before {
-  content: '🎨';
-  font-size: 18px;
-}
-
-.visual-container {
   text-align: center;
 }
 
-.prophecy-image {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 10px;
-  border: 2px solid #6B46C1;
-  box-shadow: 0 8px 25px rgba(107, 70, 193, 0.3);
-  transition: all 0.3s ease;
+.warning-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+.warning-content p {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+}
+.select-topic-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 8px 16px;
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.select-topic-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
 }
 
-.prophecy-image:hover {
-  transform: scale(1.02);
-  box-shadow: 0 12px 35px rgba(107, 70, 193, 0.4);
-}
-
-.visual-themes {
-  margin-top: 15px;
-  text-align: left;
-}
-
-.themes-label {
-  font-size: 14px;
-  color: #C4B5FD;
-  font-weight: 600;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.themes-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.theme-tag {
-  background: linear-gradient(135deg, #374151, #4B5563);
-  color: #D1D5DB;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid #6B7280;
-}
-
-.visual-generation-info {
-  margin-top: 15px;
-  padding: 10px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 6px;
-  color: #93C5FD;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Prophecy Actions */
-.prophecy-actions {
-  margin-top: 25px;
-  text-align: center;
-  border-top: 1px solid #475569;
-  padding-top: 20px;
-}
-
-.new-prophecy-btn {
-  background: linear-gradient(135deg, #059669, #10B981);
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 auto;
-}
-
-.new-prophecy-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
-}
 
 /* Chamber Footer */
 .chamber-footer {
-  margin-top: 30px;
+  margin-top: 2rem;
   text-align: center;
-  padding: 20px;
-  border-top: 1px solid #475569;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(138, 43, 226, 0.2);
 }
 
 .oracle-wisdom {
@@ -827,25 +379,34 @@
   line-height: 1.5;
 }
 
+/* Error State */
+.generation-error {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #FCA5A5;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
-  .chamber-header {
+  .oracle-options {
     flex-direction: column;
-    gap: 10px;
-    text-align: center;
   }
-  
-  .prophecy-meta {
-    justify-content: center;
+  .prophecy-chamber {
+    margin: 1rem;
+    padding: 1rem;
   }
-  
+
+  .prophecy-header h2 {
+    font-size: 1.3rem;
+  }
+
   .generate-btn {
-    padding: 12px 20px;
-    font-size: 14px;
-  }
-  
-  .prophecy-text {
-    font-size: 14px;
-    padding: 15px;
+    padding: 0.8rem 1.5rem;
   }
 }

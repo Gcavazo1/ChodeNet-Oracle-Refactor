@@ -1,0 +1,36 @@
+.nft-showcase-btn {
+    /* Keep existing gradient styles from the button */
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nft-showcase-btn:hover, .nft-showcase-btn:focus-visible {
+    animation: neon-pulse-amber 1.2s infinite alternate;
+    transform: scale(1.04);
+  }
+  
+  .leaderboard-btn {
+    /* Keep existing gradient styles from the button */
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .leaderboard-btn:hover, .leaderboard-btn:focus-visible {
+    animation: neon-pulse-cyan 1.2s infinite alternate;
+    transform: scale(1.04);
+  } 
+  
+/* Neon Pulse Animations for Community Nexus Buttons */
+@keyframes neon-pulse-amber {
+    0%, 100% {
+      box-shadow: 0 0 0px 0 #ffb300, 0 0 10px 2px #ffb300, 0 0 20px 4px #ffb30055;
+    }
+    50% {
+      box-shadow: 0 0 8px 2px #ffb300, 0 0 24px 8px #ffb300aa, 0 0 40px 16px #ffb30044;
+    }
+  }
+  @keyframes neon-pulse-cyan {
+    0%, 100% {
+      box-shadow: 0 0 0px 0 #00eaff, 0 0 10px 2px #00eaff, 0 0 20px 4px #00eaff55;
+    }
+    50% {
+      box-shadow: 0 0 8px 2px #00eaff, 0 0 24px 8px #00eaffaa, 0 0 40px 16px #00eaff44;
+    }
+  }
+  

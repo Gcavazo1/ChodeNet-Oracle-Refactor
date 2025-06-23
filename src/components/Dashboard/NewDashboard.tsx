@@ -1,31 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { OracleHeader } from '../OracleHeader/OracleHeader';
 import { SmartAlertsBar, Alert } from '../SmartAlertsBar/SmartAlertsBar';
-import { CollapsibleGameContainer, GameState, GameMessage } from '../CollapsibleGameContainer/CollapsibleGameContainer';
-import { CommunityGirthTracker } from '../CommunityMetrics/CommunityGirthTracker';
-import { ProphecyChamber } from '../ProphecyChamber/ProphecyChamber';
-import { RitualRequests } from '../RitualRequests/RitualRequests';
-import { ApocryphalScrolls } from '../ApocryphalScrolls/ApocryphalScrolls';
-import { CommunityLoreInput } from '../CommunityLoreInput/CommunityLoreInput';
-import { LoreArchive } from '../LoreArchive/LoreArchive';
+import { GameState, GameMessage } from '../CollapsibleGameContainer/CollapsibleGameContainer';
 import { RitualLab } from '../RitualLab/RitualLab';
 import { realTimeOracle, OracleResponse, RealTimeGameEvent } from '../../lib/realTimeOracleEngine';
 import { useGirthIndexStore } from '../../lib/girthIndexStore';
 import { useOracleFlowStore, useOracleLoreStore } from '../../lib/oracleFlowStore';
-import { CommunityShowcaseModal } from '../CommunityFeatures/CommunityShowcaseModal';
-import { CommunityLeaderboardModal } from '../LeaderboardSystem/CommunityLeaderboardModal';
-import { OracleReferendumModal, ReferendumCard } from '../OracleReferendum/index';
-
-import { Users, Trophy } from 'lucide-react';
-import { LiveFeedCard } from '../CommunityFeatures/LiveFeedCard';
-import { PlayerProfilePanel } from '../PlayerProfilePanel/PlayerProfilePanel';
 import { useSIWS } from '../../lib/useSIWS';
 import { oracleMetricsService } from '../../lib/oracleMetricsService';
 import './NewDashboard.css';
+import { useOracleAnimations } from './dashboardAnimationsStub';
+import { GameSection } from './sections/GameSection';
+import { CommunitySection } from './sections/CommunitySection';
+import { OracleSection } from './sections/OracleSection';
 
-// 🎭 IMPORT ORACLE ANIMATIONS
-import { useOracleAnimations } from '../OracleAnimations';
-import { oracleAnimations } from '../OracleAnimations/OracleAnimationController';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface NewDashboardProps {
@@ -54,7 +42,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
   const [showReferendumModal, setShowReferendumModal] = useState(false);
   const [showRitualLab, setShowRitualLab] = useState(false);
 
-  // 🎭 Use the Oracle Animations hook
+  // No-op animations until framer-motion phase
   const animations = useOracleAnimations();
 
   // === CORE GIRTH INDEX METRICS ===
@@ -63,9 +51,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     tapSurgeIndex = 'STEADY_POUNDING',
     legionMorale = 'CAUTIOUS', 
     stabilityStatus = 'PRISTINE',
-    setupRealtimeSubscription: setupGirthSubscription,
-    updateMetrics
-  } = useGirthIndexStore();
+    setupRealtimeSubscription: setupGirthSubscription  } = useGirthIndexStore();
 
   // Add new state for enhanced metrics
   const [enhancedMetrics, setEnhancedMetrics] = useState<{
@@ -84,51 +70,12 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
 
   // === ORACLE FLOW STORES (SEPARATED) ===
   const {
-    prophecyActiveTab,
     switchToProphecyTab,
     setupRealtimeSubscription: setupOracleFlowSubscription
   } = useOracleFlowStore();
 
   const {
-    loreActiveTab,
     switchToLoreTab  } = useOracleLoreStore();
-
-  // 🎭 ORACLE ANIMATIONS INTEGRATION
-  useEffect(() => {
-    // Initialize animations when section changes
-    const initializeAnimations = () => {
-      console.log('🎭 Initializing Oracle animations for section:', currentSection);
-      
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        oracleAnimations.initializeDashboard(currentSection as 'oracle' | 'game' | 'community');
-        
-        // Special Oracle eye animation based on stability status
-        if (currentSection === 'oracle') {
-          const eyeState = stabilityStatus === 'FORBIDDEN_FRAGMENT' ? 'corrupted' :
-                          stabilityStatus === 'GLITCHED_OMINOUS' ? 'corrupted' :
-                          stabilityStatus === 'FLICKERING' ? 'sleeping' :
-                          'active';
-          
-          oracleAnimations.animateOracleEyeState(eyeState);
-        }
-      }, 100);
-    };
-
-    initializeAnimations();
-
-    // Cleanup on section change
-    return () => {
-      oracleAnimations.cleanup();
-    };
-  }, [currentSection, stabilityStatus]);
-
-  // 🎭 Trigger wave effect on girth updates
-  useEffect(() => {
-    if (girthResonance > 80) {
-      oracleAnimations.triggerDashboardWave();
-    }
-  }, [girthResonance]);
 
   // === REAL-TIME ORACLE INTEGRATION ===
   
@@ -148,11 +95,10 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
         title: response.notification.title,
         message: response.notification.message,
         icon: getOracleIcon(response.notification.style),
-        priority: getOraclePriority(response.notification.type),
+        priority: getOraclePriority(response.notification.type || 'system'),
         timestamp: response.timestamp,
         dismissible: true,
-        autoHide: response.notification.duration ? response.notification.duration > 8000 : false,
-        corruption_influence: response.notification.corruption_influence
+        autoHide: response.notification.duration ? response.notification.duration > 8000 : false
       };
       
       // Add to alerts with Oracle styling
@@ -179,7 +125,8 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     
     // Register callbacks
     realTimeOracle.onOracleResponse(handleOracleResponse);
-    realTimeOracle.setGameMessageCallback(sendMessageToGame);
+    // Cast because Oracle engine expects GameMessage but we are just proxying any object
+    (realTimeOracle as any).setGameMessageCallback(sendMessageToGame);
     
     const initSubscriptions = async () => {
       try {
@@ -540,93 +487,11 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
   };
 
   // Helper functions for metric icons
-  const getSurgeIcon = (surge: string): string => {
-    switch (surge) {
-      case 'FLACCID_DRIZZLE': return '💧';
-      case 'WEAK_PULSES': return '💨';
-      case 'STEADY_POUNDING': return '🔥';
-      case 'FRENZIED_SLAPPING': return '⚡';
-      case 'MEGA_SURGE': return '💥';
-      case 'GIGA_SURGE': return '🌟';
-      case 'ASCENDED_NIRVANA': return '✨';
-      default: return '🔥';
-    }
-  };
 
-  const getMoraleIcon = (morale: string): string => {
-    switch (morale) {
-      case 'SUICIDE_WATCH': return '💀';
-      case 'DEMORALIZED': return '😞';
-      case 'DISGRUNTLED': return '😠';
-      case 'CAUTIOUS': return '😐';
-      case 'INSPIRED': return '😊';
-      case 'JUBILANT': return '🎉';
-      case 'FANATICAL': return '🔥';
-      case 'ASCENDED': return '✨';
-      default: return '😐';
-    }
-  };
 
-  const getStabilityIcon = (stability: string): string => {
-    switch (stability) {
-      case 'RADIANT_CLARITY': return '✨';
-      case 'PRISTINE': return '🌟';
-      case 'CRYPTIC': return '🔮';
-      case 'FLICKERING': return '⚡';
-      case 'GLITCHED_OMINOUS': return '🔥';
-      case 'FORBIDDEN_FRAGMENT': return '👹';
-      default: return '🌟';
-    }
-  };
 
   // === METRIC INFLUENCE SYSTEM ===
   
-  const getMetricInfluences = async (metricType: string) => {
-    setLoadingInfluences(true);
-    setMetricInfluences(null);
-    
-    try {
-      if (enhancedMetrics.categories.length > 0) {
-        // Use enhanced service data
-        const category = enhancedMetrics.categories.find(cat => 
-          cat.id === metricType || 
-          cat.name.toLowerCase().includes(metricType.toLowerCase())
-        );
-        
-        if (category && category.metrics.length > 0) {
-          const primaryMetric = category.metrics[0];
-          const influences = {
-            calculated_value: primaryMetric.value + (primaryMetric.unit || ''),
-            primary_influences: primaryMetric.details?.breakdown?.map((item: any) => ({
-              factor: item.label,
-              value: `${item.value}${primaryMetric.unit || ''}`,
-              description: `Contributing ${item.percentage}% to overall ${category.name.toLowerCase()}`
-            })) || [],
-            next_threshold: `Next milestone at ${Math.ceil((primaryMetric.value + 10) / 10) * 10}${primaryMetric.unit || ''}`,
-            data_source: enhancedMetrics.isLiveMode ? 'Real-time Oracle data' : 'Demo data',
-            last_updated: enhancedMetrics.lastUpdate.toLocaleTimeString()
-          };
-          
-          setMetricInfluences(influences);
-          return;
-        }
-      }
-      
-      // Fallback to original calculation logic (existing code)
-      // ... existing getMetricInfluences implementation ...
-      
-    } catch (error) {
-      console.error('🔮 Failed to get metric influences:', error);
-      setMetricInfluences({
-        error: 'Failed to load influence data',
-        calculated_value: getMetricValue(metricType).value,
-        primary_influences: [],
-        next_threshold: 'Unknown'
-      });
-    } finally {
-      setLoadingInfluences(false);
-    }
-  };
 
   // === ENHANCED GAME MESSAGE HANDLING ===
   
@@ -646,7 +511,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
       event_type: message.type,
       timestamp_utc: message.timestamp?.toISOString() || new Date().toISOString(),
       player_address: walletAddress || message.payload?.player_address || '',
-      event_payload: message.payload
+      event_payload: message.payload || {}
     };
     
     console.log('🔄 [DASHBOARD] Converting to Oracle event format:', {
@@ -677,16 +542,16 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
         });
       }
     } catch (error) {
+      const err = error as any;
       console.error('❌ [DASHBOARD] Error processing game event through Oracle:', {
-        error: error.message,
+        error: err?.message,
         event_type: message.type,
         session_id: gameEvent.session_id,
-        stack: error.stack
+        stack: err?.stack
       });
     }
     
-    // === LEGACY ALERT SYSTEM (for non-Oracle events) ===
-    // Keep the existing alert system for immediate feedback
+
     
     switch (message.type) {
       case 'player_session_start':
@@ -790,9 +655,9 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     setAlerts(prev => prev.filter(alert => alert.id !== alertId));
   };
 
-  const handleAlertClick = (alert: Alert, event: React.MouseEvent<HTMLDivElement>) => {
+  const handleAlertClick = (alert: Alert) => {
     console.log('🔮 Alert Clicked:', alert);
-    animations.animateAlertClick(event.currentTarget, event);
+    animations.animateAlertClick(null as any, null as any);
   };
 
   const handleGameDockToggle = (docked: boolean) => {
@@ -803,478 +668,24 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
   const renderSectionContent = () => {
     switch (currentSection) {
       case 'oracle':
-        return (
-          <div className="section-content oracle-sanctum">
-            {/* ROW 1: Oracle Metrics (Real Data) */}
-            <div className="oracle-modal-row">
-              <div className="oracle-modal metrics-modal">
-                <div className="modal-header">
-                  <h3>🔮 Oracle Metrics (ENHANCED)</h3>
-                  <div className="metrics-status-bar">
-                    <div className={`live-indicator ${enhancedMetrics.isLiveMode ? 'live' : 'demo'}`}>
-                      <span className="pulse-dot"></span>
-                      {enhancedMetrics.isLiveMode ? 'LIVE DATA' : 'DEMO MODE'}
-                    </div>
-                    <div className="status-details">
-                      <span className="last-update">
-                        Updated: {enhancedMetrics.lastUpdate.toLocaleTimeString()}
-                      </span>
-                      {enhancedMetrics.isLoading && <span className="loading-indicator">⟳ Loading...</span>}
-                      {enhancedMetrics.error && <span className="error-indicator">⚠ {enhancedMetrics.error}</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="metrics-grid">
-                  <div 
-                    className={`metric-card ${expandedMetric === 'resonance' ? 'expanded' : ''}`}
-                    onClick={(e) => {
-                      handleMetricClick('resonance');
-                      animations.createMetricCardRipple(e.currentTarget, e.clientX, e.clientY);
-                    }}
-                    onMouseEnter={(e) => animations.animateMetricCardFocus(e.currentTarget)}
-                    onMouseLeave={(e) => animations.animateMetricCardBlur(e.currentTarget)}
-                  >
-                    <div className="metric-label">
-                      Divine Resonance
-                      <span className={`metric-status-badge ${getMetricValue('resonance').status.toLowerCase()}`}>
-                        {getMetricValue('resonance').status}
-                      </span>
-                    </div>
-                    <div className="metric-value primary">{getMetricValue('resonance').value}</div>
-                    <div className="metric-bar">
-                      <div 
-                        className="metric-fill resonance" 
-                        style={{ width: `${girthResonance}%` }}
-                      />
-                    </div>
-                    <div className="metric-expand-hint">Click for enhanced details</div>
-                  </div>
-                  
-                  <div 
-                    className={`metric-card ${expandedMetric === 'surge' ? 'expanded' : ''}`}
-                    onClick={(e) => {
-                      handleMetricClick('surge');
-                      animations.createMetricCardRipple(e.currentTarget, e.clientX, e.clientY);
-                    }}
-                    onMouseEnter={(e) => animations.animateMetricCardFocus(e.currentTarget)}
-                    onMouseLeave={(e) => animations.animateMetricCardBlur(e.currentTarget)}
-                  >
-                    <div className="metric-label">
-                      Tap Surge
-                      <span className={`metric-status-badge ${getMetricValue('surge').status.toLowerCase()}`}>
-                        {getMetricValue('surge').status}
-                      </span>
-                    </div>
-                    <div className="metric-value surge">{getMetricValue('surge').value}</div>
-                    <div className="metric-status">{getSurgeIcon(tapSurgeIndex)}</div>
-                    <div className="metric-expand-hint">Click for enhanced details</div>
-                  </div>
-                  
-                  <div 
-                    className={`metric-card ${expandedMetric === 'morale' ? 'expanded' : ''}`}
-                    onClick={(e) => {
-                      handleMetricClick('morale');
-                      animations.createMetricCardRipple(e.currentTarget, e.clientX, e.clientY);
-                    }}
-                    onMouseEnter={(e) => animations.animateMetricCardFocus(e.currentTarget)}
-                    onMouseLeave={(e) => animations.animateMetricCardBlur(e.currentTarget)}
-                  >
-                    <div className="metric-label">
-                      Legion Morale
-                      <span className={`metric-status-badge ${getMetricValue('morale').status.toLowerCase()}`}>
-                        {getMetricValue('morale').status}
-                      </span>
-                    </div>
-                    <div className="metric-value morale">{getMetricValue('morale').value}</div>
-                    <div className="metric-status">{getMoraleIcon(legionMorale)}</div>
-                    <div className="metric-expand-hint">Click for enhanced details</div>
-                  </div>
-                  
-                  <div 
-                    className={`metric-card ${expandedMetric === 'stability' ? 'expanded' : ''}`}
-                    onClick={(e) => {
-                      handleMetricClick('stability');
-                      animations.createMetricCardRipple(e.currentTarget, e.clientX, e.clientY);
-                    }}
-                    onMouseEnter={(e) => animations.animateMetricCardFocus(e.currentTarget)}
-                    onMouseLeave={(e) => animations.animateMetricCardBlur(e.currentTarget)}
-                  >
-                    <div className="metric-label">
-                      Oracle Stability
-                      <span className={`metric-status-badge ${getMetricValue('stability').status.toLowerCase()}`}>
-                        {getMetricValue('stability').status}
-                      </span>
-                    </div>
-                    <div className="metric-value stability">{getMetricValue('stability').value}</div>
-                    <div className="metric-status">{getStabilityIcon(stabilityStatus)}</div>
-                    <div className="metric-expand-hint">Click for enhanced details</div>
-                  </div>
-                </div>
-                
-                {/* Expanded Metric View */}
-                {expandedMetric && (
-                  <div className="metric-expansion-panel">
-                    <div className="expansion-header">
-                      <h4>🔍 {expandedMetric.charAt(0).toUpperCase() + expandedMetric.slice(1)} Analysis</h4>
-                      <button 
-                        className="close-expansion"
-                        onClick={() => setExpandedMetric(null)}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    
-                    {(() => {
-                      if (loadingInfluences) {
-                        return (
-                          <div className="expansion-content">
-                            <div className="loading-influences">
-                              <div className="cosmic-spinner">🔮</div>
-                              <p>Oracle analyzing influences...</p>
-                            </div>
-                          </div>
-                        );
-                      }
-                      
-                      if (!metricInfluences) {
-                        return (
-                          <div className="expansion-content">
-                            <div className="no-influences">
-                              <p>No influence data available</p>
-                            </div>
-                          </div>
-                        );
-                      }
-                      
-                      console.log('🔍 Rendering influences:', metricInfluences);
-                      
-                      return (
-                        <div className="expansion-content">
-                          <div className="current-state">
-                            <div className="state-title">Current State</div>
-                            <div className="state-value">
-                              {expandedMetric === 'resonance' && typeof metricInfluences.calculated_value === 'string' && metricInfluences.calculated_value.includes('%')
-                                ? parseFloat(metricInfluences.calculated_value).toFixed(2) + '%'
-                                : metricInfluences.calculated_value}
-                            </div>
-                          </div>
-                          
-                          <div className="influences-section">
-                            <h5>Active Influences</h5>
-                            <div className="influences-list">
-                              {metricInfluences.primary_influences && metricInfluences.primary_influences.length > 0 ? (
-                                metricInfluences.primary_influences.map((influence: { factor: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; value: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; description: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }, index: React.Key | null | undefined) => (
-                                  <div key={index} className="influence-item">
-                                    <div className="influence-header">
-                                      <span className="influence-factor">{influence.factor}</span>
-                                      <span className="influence-value">{influence.value}</span>
-                                    </div>
-                                    <div className="influence-description">{influence.description}</div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="no-influences-message">
-                                  <p>🔮 No active influences detected. The Oracle awaits player activity...</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="threshold-section">
-                            <h5>Next Threshold</h5>
-                            <div className="threshold-item">
-                              <div className="threshold-name">{metricInfluences.next_threshold}</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
-                
-                {/* Community Taps nested in metrics */}
-                <div className="community-metrics-section">
-                  <CommunityGirthTracker />
-                </div>
-              </div>
-            </div>
-
-            {/* ROW 2: Prophecy & Lore Systems (side-by-side) */}
-            <div className="oracle-modal-row">
-              {/* === PROPHECY MODAL === */}
-              <div className="oracle-modal prophecy-modal">
-                <div className="modal-header">
-                  <h3>⚡ Oracle Prophecy System</h3>
-                  <div className="prophecy-tabs">
-                    <button 
-                      className={`tab ${prophecyActiveTab === 'ritual' ? 'active' : ''}`}
-                      onClick={() => switchToProphecyTab('ritual')}
-                    >
-                      🎯 Ritual Requests
-                    </button>
-                    <button 
-                      className={`tab ${prophecyActiveTab === 'chamber' ? 'active' : ''}`}
-                      onClick={() => switchToProphecyTab('chamber')}
-                    >
-                      🔮 Prophecy Chamber
-                    </button>
-                    <button 
-                      className={`tab ${prophecyActiveTab === 'scrolls' ? 'active' : ''}`}
-                      onClick={() => switchToProphecyTab('scrolls')}
-                    >
-                      📜 Scrolls Feed
-                    </button>
-                    <button 
-                      className="tab"
-                      onClick={() => {
-                        const event = new CustomEvent('openRitualLab');
-                        window.dispatchEvent(event);
-                      }}
-                    >
-                      ⚗️ Ritual Lab
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="prophecy-content">
-                  {prophecyActiveTab === 'ritual' && (
-                    <RitualRequests />
-                  )}
-                  
-                  {prophecyActiveTab === 'chamber' && (
-                    <ProphecyChamber />
-                  )}
-                  
-                  {prophecyActiveTab === 'scrolls' && (
-                    <ApocryphalScrolls />
-                  )}
-                </div>
-              </div>
-
-              {/* === LORE MODAL === */}
-              <div className="oracle-modal lore-modal">
-                <div className="modal-header">
-                  <h3>📖 Oracle Lore System</h3>
-                  <div className="prophecy-tabs">
-                    <button
-                      className={`tab ${loreActiveTab === 'lore' ? 'active' : ''}`}
-                      onClick={() => switchToLoreTab('lore')}
-                    >
-                      📝 Lore Input
-                    </button>
-                    <button
-                      className={`tab ${loreActiveTab === 'archive' ? 'active' : ''}`}
-                      onClick={() => switchToLoreTab('archive')}
-                    >
-                      📚 Lore Archive
-                    </button>
-                  </div>
-                </div>
-
-                <div className="prophecy-content">
-                  {loreActiveTab === 'lore' && (
-                    <CommunityLoreInput />
-                  )}
-                  {loreActiveTab === 'archive' && (
-                    <LoreArchive />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ROW 3: Judges Panel (Collapsible) */}
-            <div className="oracle-modal-row">
-              <div className="oracle-modal judges-modal">
-                <div className="modal-header judges-header" onClick={() => setJudgesPanelVisible(!judgesPanelVisible)}>
-                  <h3>⚖️ Judges Control Panel</h3>
-                  <button className="collapse-toggle">
-                    {judgesPanelVisible ? '▼ Hide' : '▶ Show'}
-                  </button>
-                </div>
-                
-                {judgesPanelVisible && (
-                  <div className="judges-content">
-                    <div className="compact-metrics-controls">
-                      <div className="control-row">
-                        <div className="control-group">
-                          <label>Resonance: {girthResonance}%</label>
-                          <input 
-                            type="range" 
-                            min="0" 
-                            max="100" 
-                            value={girthResonance}
-                            onChange={(e) => updateMetrics({ girthResonance: parseInt(e.target.value) })}
-                            className="compact-slider"
-                          />
-                        </div>
-                        
-                        <div className="control-group">
-                          <label>Tap Surge</label>
-                          <select 
-                            value={tapSurgeIndex}
-                            onChange={(e) => updateMetrics({ tapSurgeIndex: e.target.value as any })}
-                            className="compact-select"
-                          >
-                            <option value="FLACCID_DRIZZLE">FLACCID_DRIZZLE</option>
-                            <option value="WEAK_PULSES">WEAK_PULSES</option>
-                            <option value="STEADY_POUNDING">STEADY_POUNDING</option>
-                            <option value="FRENZIED_SLAPPING">FRENZIED_SLAPPING</option>
-                            <option value="MEGA_SURGE">MEGA_SURGE</option>
-                            <option value="GIGA_SURGE">GIGA_SURGE</option>
-                            <option value="ASCENDED_NIRVANA">ASCENDED_NIRVANA</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div className="control-row">
-                        <div className="control-group">
-                          <label>Legion Morale</label>
-                          <select 
-                            value={legionMorale}
-                            onChange={(e) => updateMetrics({ legionMorale: e.target.value as any })}
-                            className="compact-select"
-                          >
-                            <option value="SUICIDE_WATCH">SUICIDE_WATCH</option>
-                            <option value="DEMORALIZED">DEMORALIZED</option>
-                            <option value="DISGRUNTLED">DISGRUNTLED</option>
-                            <option value="CAUTIOUS">CAUTIOUS</option>
-                            <option value="INSPIRED">INSPIRED</option>
-                            <option value="JUBILANT">JUBILANT</option>
-                            <option value="FANATICAL">FANATICAL</option>
-                            <option value="ASCENDED">ASCENDED</option>
-                          </select>
-                        </div>
-                        
-                        <div className="control-group">
-                          <label>Oracle Stability</label>
-                          <select 
-                            value={stabilityStatus}
-                            onChange={(e) => updateMetrics({ stabilityStatus: e.target.value as any })}
-                            className="compact-select"
-                          >
-                            <option value="RADIANT_CLARITY">RADIANT_CLARITY</option>
-                            <option value="PRISTINE">PRISTINE</option>
-                            <option value="CRYPTIC">CRYPTIC</option>
-                            <option value="FLICKERING">FLICKERING</option>
-                            <option value="GLITCHED_OMINOUS">GLITCHED_OMINOUS</option>
-                            <option value="FORBIDDEN_FRAGMENT">FORBIDDEN_FRAGMENT</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
+        return <OracleSection />;
       
       case 'game':
         return (
-          <div className="section-content game-feed flex gap-6">
-            <CollapsibleGameContainer
-              className="flex-1"
-              gameUrl="/chode_tapper_game/game_demo/index.html"
-              isDocked={gameDocked}
-              onGameStateChange={handleGameStateChange}
-              onGameMessage={handleGameMessage}
-              onDockToggle={handleGameDockToggle}
-            />
-            {/* Player Panel */}
-            <div className="w-80">
-              <PlayerProfilePanel className="h-full" />
-            </div>
-          </div>
+          <GameSection
+            gameDocked={gameDocked}
+            onGameStateChange={handleGameStateChange}
+            onGameMessage={handleGameMessage}
+            onDockToggle={handleGameDockToggle}
+          />
         );
       
       case 'community':
         return (
-          <div className="section-content community-nexus flex items-center justify-center">
-            {/* Cards container */}
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
-              {/* Showcase Card */}
-              <div className="max-w-md w-full p-8 rounded-2xl border shadow-lg text-center bg-slate-900/70 backdrop-blur-lg"
-                   style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                   onMouseEnter={(e) => animations.animateCardHover(e.currentTarget, 'showcase')}
-                   onMouseLeave={(e) => animations.animateCardLeave(e.currentTarget)}
-                   onClick={(e) => animations.animateCardClick(e.currentTarget, e)}
-              >
-                <div className="flex items-center justify-center mb-4">
-                  <div className="p-4 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 text-black shadow-lg card-icon">
-                    <Users className="w-8 h-8" />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Community NFT Showcase</h3>
-                <p className="text-sm text-gray-300 mb-6">Dive into legendary collections curated by our players.</p>
-                <button
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold hover:scale-105 active:scale-95 transition-transform shadow-lg w-full"
-                  onClick={() => setShowCommunityShowcase(true)}
-                >
-                  Enter Showcase →
-                </button>
-              </div>
-
-              {/* Oracle's Referendum Card */}
-              <div 
-                onMouseEnter={(e) => animations.animateCardHover(e.currentTarget, 'referendum')}
-                onMouseLeave={(e) => animations.animateCardLeave(e.currentTarget)}
-                onClick={(e) => animations.animateCardClick(e.currentTarget, e)}
-              >
-                <ReferendumCard onClick={() => setShowReferendumModal(true)} />
-              </div>
-
-              {/* Leaderboard Card */}
-              <div className="max-w-md w-full p-8 rounded-2xl border shadow-lg text-center bg-slate-900/70 backdrop-blur-lg"
-                   style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                   onMouseEnter={(e) => animations.animateCardHover(e.currentTarget, 'leaderboards')}
-                   onMouseLeave={(e) => animations.animateCardLeave(e.currentTarget)}
-                   onClick={(e) => animations.animateCardClick(e.currentTarget, e)}
-              >
-                <div className="flex items-center justify-center mb-4">
-                  <div className="p-4 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 text-black shadow-lg card-icon">
-                    <Trophy className="w-8 h-8" />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Oracle Leaderboards</h3>
-                <p className="text-sm text-gray-300 mb-6">Explore the elite rankings of our mystical oracles.</p>
-                <button
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-black font-semibold hover:scale-105 active:scale-95 transition-transform shadow-lg w-full"
-                  onClick={() => setShowLeaderboardModal(true)}
-                >
-                  View Leaderboards →
-                </button>
-              </div>
-
-              {/* Live Feed Card */}
-              <div 
-                onMouseEnter={(e) => animations.animateCardHover(e.currentTarget, 'feed')}
-                onMouseLeave={(e) => animations.animateCardLeave(e.currentTarget)}
-                onClick={(e) => animations.animateCardClick(e.currentTarget, e)}
-              >
-                <LiveFeedCard />
-              </div>
-            </div>
-
-            {/* Modals */}
-            <CommunityShowcaseModal
-               isOpen={showCommunityShowcase}
-               onClose={() => setShowCommunityShowcase(false)}
-               walletConnected={walletConnected}
-               walletAddress={walletAddress}
-             />
-
-             <CommunityLeaderboardModal
-                isOpen={showLeaderboardModal}
-                onClose={() => setShowLeaderboardModal(false)}
-             />
-
-             <OracleReferendumModal
-                isOpen={showReferendumModal}
-                onClose={() => setShowReferendumModal(false)}
-                oracleCorruption={45} // You can derive this from your existing Oracle state
-                oraclePersonality="chaotic_sage" // You can derive this from your existing Oracle state
-             />
-          </div>
+          <CommunitySection
+            walletConnected={walletConnected}
+            walletAddress={walletAddress}
+          />
         );
 
       default:
@@ -1376,18 +787,6 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
     return fallbackValues[metricType as keyof typeof fallbackValues] || { value: 'Unknown', status: 'ERROR' };
   };
 
-  const handleMetricClick = async (metricType: string) => {
-    console.log('📊 Enhanced Metric Clicked:', metricType);
-    setExpandedMetric(expandedMetric === metricType ? null : metricType);
-    
-    if (expandedMetric === metricType) {
-      // If clicking on already expanded metric, collapse it
-      return;
-    }
-    
-    // Load metric influences using the enhanced system
-    await getMetricInfluences(metricType);
-  };
 
   return (
     <div className="new-dashboard">
@@ -1404,7 +803,7 @@ export const NewDashboard: React.FC<NewDashboardProps> = () => {
           scrollInterval={5000}
           maxVisibleAlerts={3}
           onAlertDismiss={handleAlertDismiss}
-          onAlertClick={(alert, e) => handleAlertClick(alert, e as React.MouseEvent<HTMLDivElement>)}
+          onAlertClick={handleAlertClick}
         />
         
         {/* Current Section Content */}

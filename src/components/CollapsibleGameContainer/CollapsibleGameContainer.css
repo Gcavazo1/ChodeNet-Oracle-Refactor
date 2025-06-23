@@ -74,13 +74,14 @@
 
 .title-text {
   font-family: 'Orbitron', monospace;
-  font-size: 1.125rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #F9FAFB;
   background: linear-gradient(135deg, var(--status-live), var(--oracle-primary));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  text-shadow: +3px -3px 0 #000000bb;
 }
 
 .collapsible-game-container.undocked .title-text {

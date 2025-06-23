@@ -442,6 +442,14 @@ header,
       inset 0 0 10px rgba(255, 215, 0, 0.1),
       0 0 20px rgba(255, 215, 0, 0.2);
   }
+
+  @keyframes slow-pan {
+    from { transform: translateY(0); }
+    to { transform: translateY(-20%); }
+  }
+  .animate-slow-pan {
+    animation: slow-pan 60s linear infinite;
+  }
 }
 
 /* Liquid morphing animations */
@@ -804,3 +812,150 @@ header,
     max-height: calc(100vh - 200px) !important;
   }
 }
+
+body.nft-showcase-open .smart-alerts-bar,
+body.leaderboard-open .smart-alerts-bar,
+body.live-event-feed-open .smart-alerts-bar {
+  display: none !important;
+}
+
+.community-nexus {
+  /* perspective: 2000px;  Removed to allow fixed-position modals to escape section bounds */
+}
+
+/* Preserve 3D hover effects by moving perspective to inner grid container */
+.community-nexus .grid {
+  perspective: 2000px;
+  transform-style: preserve-3d;
+}
+
+/* ---------- Cinematic Intro Helpers ---------- */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+.animate-bounce-slow {
+  animation: bounceSlow 2s ease-in-out infinite;
+}
+
+/* Glitch heading effect */
+.glitch-heading {
+  position: relative;
+}
+.glitch-heading::before,
+.glitch-heading::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  color: transparent;
+  background: inherit;
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+}
+.glitch-heading::before {
+  transform: translate(2px, -2px);
+  clip-path: inset(0 0 45% 0);
+  animation: glitchTop 2s infinite;
+}
+.glitch-heading::after {
+  transform: translate(-2px, 2px);
+  clip-path: inset(55% 0 0 0);
+  animation: glitchBottom 2s infinite;
+}
+@keyframes glitchTop {
+  0%, 5% { transform: translate(2px, -2px); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, 2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(2px, -2px); }
+}
+@keyframes glitchBottom {
+  0%, 5% { transform: translate(-2px, 2px); }
+  20% { transform: translate(2px, -2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(-2px, 2px); }
+  100% { transform: translate(-2px, 2px); }
+}
+/* -------------------------------------------- */
+
+/* Lenis Recommended CSS for Smooth Scrolling */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* --- Gradient Hover Card Utility (Hyperplexed style) --- */
+.gradient-hover-card {
+  position: relative;
+  isolation: isolate; /* keeps pseudo-element under children */
+}
+
+.gradient-hover-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    130deg,
+    transparent 0% 33%,
+    rgb(98 0 234) 66%,
+    rgb(236 64 122) 83.5%,
+    rgb(253 216 53) 100%
+  );
+  background-size: 300% 300%;
+  transition: background-position 350ms ease, transform 350ms ease;
+  z-index: -1;
+}
+
+.gradient-hover-card:hover::before {
+  background-position: 100% 100%;
+  transform: scale(1.08, 1.03);
+}
+
+/* --- SmartCursor falling star CSS --- */
+/* .smart-star {
+  position: absolute;
+  z-index: 9999;
+  pointer-events: none;
+  font-family: 'Arial', sans-serif;
+}
+
+@keyframes fall-1 {
+  0% { transform: translate(0,0) rotateX(45deg) rotateY(30deg) rotateZ(0deg) scale(0.25); opacity:0; }
+  5% { transform: translate(10px,-10px) rotateX(45deg) rotateY(30deg) rotateZ(0deg) scale(1); opacity:1; }
+  100% { transform: translate(25px,200px) rotateX(180deg) rotateY(270deg) rotateZ(90deg) scale(1); opacity:0; }
+}
+@keyframes fall-2 {
+  0% { transform: translate(0,0) rotateX(-20deg) rotateY(10deg) scale(0.25); opacity:0; }
+  10% { transform: translate(-10px,-5px) rotateX(-20deg) rotateY(10deg) scale(1); opacity:1; }
+  100% { transform: translate(-10px,160px) rotateX(-90deg) rotateY(45deg) scale(0.25); opacity:0; }
+}
+@keyframes fall-3 {
+  0% { transform: translate(0,0) rotateX(0deg) rotateY(45deg) scale(0.5); opacity:0; }
+  15% { transform: translate(7px,5px) rotateX(0deg) rotateY(45deg) scale(1); opacity:1; }
+  100% { transform: translate(20px,120px) rotateX(-180deg) rotateY(-90deg) scale(0.5); opacity:0; }
+}
+
+.smart-star {
+  animation-fill-mode: forwards;
+} */

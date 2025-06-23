@@ -119,56 +119,6 @@ Deno.serve(async (req)=>{
       player_address,
       game_event_timestamp: new Date().toISOString()
     });
-    // 🚀 Reward player with soft $GIRTH for contributing
-    const SOFT_GIRTH_REWARD = 1; // 1 GIRTH per entry
-    let newSoftBalance = 0;
-
-    // Determine if the player is authenticated (has a user_profile)
-    const { data: profileRow } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id')
-      .eq('wallet_address', player_address)
-      .single();
-
-    if (profileRow) {
-      // Authenticated user – increment girth_balances.soft_balance
-      const { data: balanceRow } = await supabaseAdmin
-        .from('girth_balances')
-        .select('soft_balance')
-        .eq('user_profile_id', profileRow.id)
-        .single();
-
-      if (balanceRow) {
-        newSoftBalance = parseFloat(balanceRow.soft_balance) + SOFT_GIRTH_REWARD;
-        await supabaseAdmin
-          .from('girth_balances')
-          .update({ soft_balance: newSoftBalance })
-          .eq('user_profile_id', profileRow.id);
-      } else {
-        newSoftBalance = SOFT_GIRTH_REWARD;
-        await supabaseAdmin
-          .from('girth_balances')
-          .insert({ user_profile_id: profileRow.id, soft_balance: newSoftBalance });
-      }
-    } else {
-      // Anonymous – store pending reward in player_states
-      await supabaseAdmin.rpc('increment_pending_soft_reward', {
-        p_player_address: player_address,
-        p_delta: SOFT_GIRTH_REWARD
-      });
-    }
-
-    // Broadcast balance update (if authenticated)
-    if (profileRow) {
-      await supabaseAdmin.from('live_game_events').insert({
-        session_id: `lore_reward_${Date.now()}`,
-        event_type: 'soft_balance_update',
-        event_payload: { soft_balance: newSoftBalance, delta: SOFT_GIRTH_REWARD },
-        player_address,
-        game_event_timestamp: new Date().toISOString()
-      });
-    }
-
     return new Response(JSON.stringify({
       success: true,
       message: "Your voice has been heard by the Oracle!",

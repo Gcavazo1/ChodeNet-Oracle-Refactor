@@ -5,6 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { chodeOracle } from '../../lib/chodeOracleEngine';
 import './CommunityGirthTracker.css';
+import { HackerText } from '../../intro/HackerText';
+import { MagicalText } from '../../intro/MagicalText';
 
 interface CommunityStats {
   totalTaps: number;
@@ -328,7 +330,7 @@ export const CommunityGirthTracker: React.FC = () => {
             className="oracle-eye-svg"
             draggable={false}
           />
-          COLLECTIVE GIRTH ACCUMULATION
+          <MagicalText text="COLLECTIVE GIRTH ACCUMULATION" />
         </h2>
 
         {/* Bolt badge pinned to right */}
@@ -361,7 +363,9 @@ export const CommunityGirthTracker: React.FC = () => {
 
       {/* SPL Token Conversion */}
       <div className="token-conversion">
-        <h3 className="section-title">💰 SPL TOKEN GENERATION</h3>
+        <h3 className="section-title">
+          💰 <HackerText text="SPL TOKEN GENERATION" />
+        </h3>
         <div className="conversion-grid">
           <div className="conversion-stat">
             <span className="stat-value">
@@ -395,35 +399,45 @@ export const CommunityGirthTracker: React.FC = () => {
 
       {/* Community Statistics Grid */}
       <div className="community-stats-grid">
-        <div className="stat-card">
-          <span className="stat-icon">🌐</span>
-          <span className="stat-value">{formatNumber(communityStats?.totalGirth || 0)}</span>
-          <span className="stat-label">Total Community Girth</span>
+        <div className="oracle-metric-card">
+          <div className="oracle-metric-content">
+            <span className="stat-icon">🌐</span>
+            <span className="stat-value">{formatNumber(communityStats?.totalGirth || 0)}</span>
+            <span className="stat-label">Total Community Girth</span>
+          </div>
         </div>
         
-        <div className="stat-card">
-          <span className="stat-icon">👥</span>
-          <span className="stat-value">{communityStats?.totalPlayers || 0}</span>
-          <span className="stat-label">Active Tappers</span>
+        <div className="oracle-metric-card">
+          <div className="oracle-metric-content">
+            <span className="stat-icon">👥</span>
+            <span className="stat-value">{communityStats?.totalPlayers || 0}</span>
+            <span className="stat-label">Active Tappers</span>
+          </div>
         </div>
         
-        <div className="stat-card">
-          <span className="stat-icon">📊</span>
-          <span className="stat-value">{formatNumber(communityStats?.averageGirthPerPlayer || 0)}</span>
-          <span className="stat-label">Average Girth/Player</span>
+        <div className="oracle-metric-card">
+          <div className="oracle-metric-content">
+            <span className="stat-icon">📊</span>
+            <span className="stat-value">{formatNumber(communityStats?.averageGirthPerPlayer || 0)}</span>
+            <span className="stat-label">Average Girth/Player</span>
+          </div>
         </div>
         
-        <div className="stat-card">
-          <span className="stat-icon">🏆</span>
-          <span className="stat-value">{communityStats?.mostActivePlayer || 'Unknown'}</span>
-          <span className="stat-label">Top Contributor</span>
+        <div className="oracle-metric-card">
+          <div className="oracle-metric-content">
+            <span className="stat-icon">🏆</span>
+            <span className="stat-value">{communityStats?.mostActivePlayer || 'Unknown'}</span>
+            <span className="stat-label">Top Contributor</span>
+          </div>
         </div>
       </div>
 
       {/* Current Milestone Progress */}
       {currentMilestone && (
         <div className="milestone-progress">
-          <h3 className="section-title">🎯 NEXT COMMUNITY MILESTONE</h3>
+          <h3 className="section-title">
+            🎯 <HackerText text="NEXT COMMUNITY MILESTONE" />
+          </h3>
           <div className="milestone-info">
             <span className="milestone-name">{currentMilestone.description}</span>
             <span className="milestone-target">

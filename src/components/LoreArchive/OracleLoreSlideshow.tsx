@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Play, 
@@ -586,7 +587,8 @@ const OracleLoreSlideshow: React.FC<OracleLoreSlideshowProps> = ({
 
   if (!isOpen || entries.length === 0) return null;
 
-  return (
+  // Wrap overlay in a React portal to ensure it escapes any overflow/transform clipping
+  const OverlayContent = (
     <div 
       className={`fixed inset-0 oracle-bg flex ${isFullscreen ? 'fullscreen-mode' : ''} ${highContrast ? 'high-contrast' : ''}`}
       style={{ zIndex: 10000 }}
@@ -1103,6 +1105,8 @@ const OracleLoreSlideshow: React.FC<OracleLoreSlideshowProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(OverlayContent, document.body);
 };
 
 export default OracleLoreSlideshow;

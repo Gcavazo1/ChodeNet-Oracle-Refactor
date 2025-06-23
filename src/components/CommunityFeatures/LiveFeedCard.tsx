@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, X, Maximize2 } from 'lucide-react';
+import { Sparkles, X, Maximize2, Zap } from 'lucide-react';
 import { LiveCommunityFeed } from './LiveCommunityFeed';
 import { LiveEventFeedModal } from '../LiveEventFeed/LiveEventFeedModal';
+import { HackerText } from '../../intro/HackerText';
 
 export const LiveFeedCard: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
@@ -13,18 +14,20 @@ export const LiveFeedCard: React.FC = () => {
          style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
       {/* Header Icon */}
       <div className="flex items-center justify-center mb-4">
-        <div className="p-4 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 text-black shadow-lg">
-          <Sparkles className="w-8 h-8" />
+        <div className="p-4 rounded-full bg-gradient-to-tr from-teal-400 to-cyan-500 text-black shadow-lg">
+          <Zap className="w-8 h-8" />
         </div>
       </div>
 
       {/* Collapsed View */}
       {!expanded && (
         <>
-          <h3 className="text-2xl font-bold mb-2">Live Event Feed</h3>
+          <h3 className="text-2xl font-bold mb-2">
+            <HackerText text="Live Event Feed" />
+          </h3>
           <p className="text-sm text-gray-300 mb-6">Watch real-time Oracle events as they unfold.</p>
           <button
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-500 text-black font-semibold hover:scale-105 active:scale-95 transition-transform shadow-lg w-full"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-black font-semibold hover:scale-105 active:scale-95 transition-transform shadow-lg w-full"
             onClick={() => setExpanded(true)}
           >
             Open Live Feed →

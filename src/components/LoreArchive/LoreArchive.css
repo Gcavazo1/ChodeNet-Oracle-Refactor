@@ -425,67 +425,6 @@
   line-height: 1.6;
 }
 
-/* === MODAL === */
-.lore-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.lore-modal {
-  background: linear-gradient(135deg, #0f0014 0%, #1a0624 50%, #0f0014 100%);
-  border: 2px solid #9D4EDD;
-  border-radius: 15px;
-  max-width: 800px;
-  max-height: 90vh;
-  width: 100%;
-  overflow-y: auto;
-  box-shadow: 0 0 50px rgba(157, 78, 221, 0.5);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 25px;
-  border-bottom: 2px solid rgba(157, 78, 221, 0.3);
-}
-
-.modal-header h2 {
-  color: #E5E7EB;
-  margin: 0;
-  font-size: 1.8rem;
-  text-shadow: 0 0 15px rgba(229, 231, 235, 0.3);
-}
-
-.close-modal {
-  background: none;
-  border: none;
-  color: #9CA3AF;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 5px;
-  transition: all 0.3s ease;
-}
-
-.close-modal:hover {
-  color: #EF4444;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.modal-content {
-  padding: 25px;
-}
-
 .story-text {
   color: #E5E7EB;
   line-height: 1.8;
@@ -517,19 +456,7 @@
   max-width: 500px;
 }
 
-.modal-footer {
-  padding: 25px;
-  border-top: 2px solid rgba(157, 78, 221, 0.3);
-  background: rgba(0, 0, 0, 0.3);
-}
 
-.modal-stats {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  color: #9CA3AF;
-  font-size: 0.9rem;
-}
 
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {
@@ -588,7 +515,7 @@
     gap: 10px;
   }
 
-  .lore-modal {
+  .lore-archive-modal {
     margin: 10px;
     max-height: 95vh;
   }
@@ -628,27 +555,27 @@
 
 /* === CUSTOM SCROLLBAR === */
 .lore-archive::-webkit-scrollbar,
-.lore-modal::-webkit-scrollbar,
+.lore-archive-modal::-webkit-scrollbar,
 .prophecy-content .lore-archive .lore-grid::-webkit-scrollbar {
   width: 8px;
 }
 
 .lore-archive::-webkit-scrollbar-track,
-.lore-modal::-webkit-scrollbar-track,
+.lore-archive-modal::-webkit-scrollbar-track,
 .prophecy-content .lore-archive .lore-grid::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 4px;
 }
 
 .lore-archive::-webkit-scrollbar-thumb,
-.lore-modal::-webkit-scrollbar-thumb,
+.lore-archive-modal::-webkit-scrollbar-thumb,
 .prophecy-content .lore-archive .lore-grid::-webkit-scrollbar-thumb {
   background: rgba(157, 78, 221, 0.6);
   border-radius: 4px;
 }
 
 .lore-archive::-webkit-scrollbar-thumb:hover,
-.lore-modal::-webkit-scrollbar-thumb:hover,
+.lore-archive-modal::-webkit-scrollbar-thumb:hover,
 .prophecy-content .lore-archive .lore-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(157, 78, 221, 0.8);
 }

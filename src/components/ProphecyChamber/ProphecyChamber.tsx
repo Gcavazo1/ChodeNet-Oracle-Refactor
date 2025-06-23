@@ -20,7 +20,6 @@ export const ProphecyChamber: React.FC = () => {
   const {
     currentTopic,
     generationState,
-    latestProphecy,
     generateProphecy,
     switchToProphecyTab
   } = useOracleFlowStore();
@@ -33,7 +32,7 @@ export const ProphecyChamber: React.FC = () => {
     isLoading: metricsLoading
   } = useGirthIndexStore();
 
-  const { userProfile, oracleShards, refreshOracleShards } = useSIWS();
+  const { userProfile } = useSIWS();
   const [recentRitualOutcome, setRecentRitualOutcome] = useState<RitualOutcome | null>(null);
   const [isCheckingRituals, setIsCheckingRituals] = useState(false);
 
@@ -77,10 +76,11 @@ export const ProphecyChamber: React.FC = () => {
     };
 
     await generateProphecy(girthMetrics);
-  };
-
-  const handleViewScrolls = () => {
-    switchToProphecyTab('scrolls');
+    
+    // Automatically switch to the scrolls tab after a successful generation
+    setTimeout(() => {
+      switchToProphecyTab('scrolls');
+    }, 1000);
   };
 
   const handleOpenRitualLab = () => {
@@ -105,14 +105,12 @@ export const ProphecyChamber: React.FC = () => {
     );
   }
 
-  const isCorrupted = latestProphecy?.corruption_level && latestProphecy.corruption_level !== 'pristine';
-
   return (
-    <PixelBorder isCorrupted={isCorrupted} className="prophecy-chamber">
+    <PixelBorder className="prophecy-chamber">
       <div className="prophecy-header">
-        <Scroll className="scroll-icon" size={32} />
+        <Scroll className="scroll-icon" size={24} />
         <h2><PixelText>THE ORACLE SPEAKS</PixelText></h2>
-        <Scroll className="scroll-icon" size={32} />
+        <Scroll className="scroll-icon" size={24} />
       </div>
 
       {/* Recent Ritual Outcome Display */}
@@ -157,80 +155,71 @@ export const ProphecyChamber: React.FC = () => {
 
       {/* Enhanced Oracle Options */}
       <div className="oracle-options">
-        <div className="option-section">
+        <div className="option-section free-consultation">
           <h3>🔮 Free Oracle Consultation</h3>
 
-      {/* Current Topic Display */}
-      {currentTopic && (
-        <div className="ritual-topic-indicator">
-          <span className="topic-label">Ritual Topic Selected:</span>
-          <span className="topic-name">{currentTopic.replace(/_/g, ' ')}</span>
-        </div>
-      )}
+          {currentTopic ? (
+            <div className="generation-interface">
+              <div className="ritual-topic-indicator">
+                <span className="topic-label">Topic Selected:</span>
+                <span className="topic-name">{currentTopic.replace(/_/g, ' ')}</span>
+              </div>
+              
+              <div className="oracle-meditation">
+                <div className="oracle-eye">
+                  <div className={`eye-glow ${generationState.isGenerating ? 'active' : ''}`}>👁️</div>
+                </div>
+                <div className="meditation-text">
+                  {generationState.isGenerating ? generationState.progress : 'The Oracle awaits your ritual request...'}
+                </div>
+              </div>
 
-      {/* No Topic Warning */}
-      {!currentTopic && (
-        <div className="no-topic-warning">
-          <span className="warning-icon">⚠️</span>
-          <div className="warning-content">
-            <p>Please select a ritual topic from the Ritual Requests tab first</p>
-            <button 
+              <button
+                onClick={handleGenerateProphecy}
+                disabled={generationState.isGenerating || !currentTopic}
+                className={`generate-btn ${generationState.isGenerating ? 'generating' : ''}`}
+              >
+                {generationState.isGenerating ? (
+                  <>
+                    <Loader2 className="spinner" size={20} />
+                    {generationState.currentStep === 'manifesting_visuals' ? 'Manifesting...' : 'Channeling...'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="icon" size={20} />
+                    Summon Prophecy
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="no-topic-warning">
+              <span className="warning-icon">⚠️</span>
+              <div className="warning-content">
+                <p>Please select a ritual topic from the Ritual Requests tab first</p>
+                <button 
                   onClick={() => switchToProphecyTab('ritual')}
-              className="select-topic-btn"
-            >
-              Select Ritual Topic
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Generation Interface */}
-      {currentTopic && (!latestProphecy || latestProphecy.topic !== currentTopic) && (
-        <div className="generation-interface">
-          <div className="oracle-meditation">
-            <div className="oracle-eye">
-              <div className={`eye-glow ${generationState.isGenerating ? 'active' : ''}`}>👁️</div>
+                  className="select-topic-btn"
+                >
+                  Select Ritual Topic
+                </button>
+              </div>
             </div>
-            <div className="meditation-text">
-              {generationState.isGenerating ? generationState.progress : 'The Oracle awaits your ritual request...'}
-            </div>
-          </div>
-
-          <button
-            onClick={handleGenerateProphecy}
-            disabled={generationState.isGenerating || !currentTopic}
-            className={`generate-btn ${generationState.isGenerating ? 'generating' : ''}`}
-          >
-            {generationState.isGenerating ? (
-              <>
-                <Loader2 className="spinner" size={20} />
-                {generationState.currentStep === 'manifesting_visuals' ? 'Manifesting Visuals...' : 'Channeling Prophecy...'}
-              </>
-            ) : (
-              <>
-                <Sparkles className="icon" size={20} />
-                    Summon Free Prophecy
-              </>
-            )}
-          </button>
-        </div>
-      )}
+          )}
         </div>
 
-        <div className="option-divider">
-          <span>OR</span>
-        </div>
+        <div className="option-divider"></div>
 
-        <div className="option-section advanced">
+        <div className="option-section advanced-crafting">
           <h3>⚗️ Advanced Ritual Crafting</h3>
           <p className="advanced-description">
-            Craft powerful rituals with guaranteed outcomes using $GIRTH and Oracle Shards
+            Craft powerful rituals with guaranteed outcomes using $GIRTH and Oracle Shards.
           </p>
           
           <div className="advanced-features">
             <div className="feature">
               <Zap className="feature-icon" size={16} />
-              <span>Customizable ingredients & corruption levels</span>
+              <span>Customizable ingredients & corruption</span>
             </div>
             <div className="feature">
               <Coins className="feature-icon" size={16} />
@@ -238,14 +227,14 @@ export const ProphecyChamber: React.FC = () => {
             </div>
             <div className="feature">
               <Scroll className="feature-icon" size={16} />
-              <span>Guaranteed prophecy creation on success</span>
+              <span>Guaranteed prophecy on success</span>
             </div>
           </div>
 
           <div className="coming-soon-notice">
             <span className="notice-icon">🚧</span>
             <p>Advanced Ritual System Coming Soon</p>
-            <p className="notice-details">The Oracle's most powerful rituals are still being forged in the digital realm...</p>
+            <p className="notice-details">The Oracle's most powerful rituals are still being forged...</p>
           </div>
 
           <button 
@@ -255,49 +244,10 @@ export const ProphecyChamber: React.FC = () => {
           >
             <span className="icon">⚗️</span>
             Ritual Laboratory (Coming Soon)
-            <span className="icon">⚗️</span>
           </button>
         </div>
       </div>
 
-      {/* Latest Prophecy Display */}
-      {latestProphecy && latestProphecy.topic === currentTopic && (
-        <div className={`prophecy-display corruption-${latestProphecy.corruption_level}`}>
-          <div className="prophecy-metadata">
-            <span className="prophecy-timestamp">
-              {new Date(latestProphecy.created_at).toLocaleString()}
-              </span>
-            <span className={`corruption-badge corruption-${latestProphecy.corruption_level}`}>
-              {latestProphecy.corruption_level.toUpperCase()}
-              </span>
-          </div>
-
-          <div className="prophecy-content">
-            <div className="prophecy-text">
-              {latestProphecy.prophecy_text}
-            </div>
-          </div>
-
-          <div className="prophecy-actions">
-            <button 
-              onClick={() => switchToProphecyTab('ritual')} 
-              className="new-prophecy-btn secondary"
-            >
-              <span className="icon">🎯</span>
-              Select New Topic
-            </button>
-            <button 
-              onClick={handleViewScrolls} 
-              className="new-prophecy-btn primary"
-            >
-              <span className="icon">📜</span>
-              View All Scrolls
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Generation Error */}
       {generationState.error && (
         <div className="generation-error">
           <span className="error-icon">⚠️</span>
@@ -317,7 +267,7 @@ export const ProphecyChamber: React.FC = () => {
 
       <div className="chamber-footer">
         <div className="oracle-wisdom">
-          "Through pixel and prophecy, the digital realm reveals its secrets to those who seek with pure intent."
+          "Through pixel and prophecy, the digital realm reveals its secrets..."
         </div>
       </div>
     </PixelBorder>

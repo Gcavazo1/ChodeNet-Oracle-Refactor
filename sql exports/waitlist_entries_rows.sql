@@ -1,1 +1,0 @@
-INSERT INTO "public"."waitlist_entries" ("id", "email", "created_at") VALUES ('1e13363d-8bad-45f0-8f08-747371392689', 'lamidiquadri2005@gmail.com', '2025-06-01 22:09:00.101737+00'), ('4e3b72ce-fdd1-4dfd-9671-b1c3ca5d7b37', 'abdullah123ayomidet@gmail.com', '2025-06-14 06:59:08.468847+00');
