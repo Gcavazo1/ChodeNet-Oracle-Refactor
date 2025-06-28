@@ -43,12 +43,12 @@ const IntroExperience: React.FC<IntroExperienceProps> = ({ onIntroFinish }) => {
 
   // Define the full cinematic flow – adjust durations to taste
   const scrollScenes: {id: string, duration: number, component: ComponentType<any>}[] = [
-    { id: 'hero', duration: 7, component: HeroScene },
-    { id: 'sacred-tabs', duration: 12,component: SacredTabsScene },
-    { id: 'game-feed', duration: 12, component: GameFeedScene },
-    { id: 'oracle-lore', duration: 16, component: OracleLoreScene },
-    { id: 'oracle-referendum', duration: 16, component: OracleReferendumScene },
-    { id: 'begin-ritual', duration: 7, component: BeginRitualScene }
+    { id: 'hero', duration: 10, component: HeroScene },
+    { id: 'sacred-tabs', duration: 20,component: SacredTabsScene },
+    { id: 'game-feed', duration: 20, component: GameFeedScene },
+    { id: 'oracle-lore', duration: 20, component: OracleLoreScene },
+    { id: 'oracle-referendum', duration: 20, component: OracleReferendumScene },
+    { id: 'begin-ritual', duration: 10, component: BeginRitualScene }
   ];
 
   // Pass handleIntroComplete to the last scene
