@@ -1,0 +1,14 @@
+chode_reference_library/*
+supabase/*
+supabase/functions/*
+/home/project/chode_reference_library/characters/*
+/home/project/chode_reference_library/chodes/*
+/home/project/chode_reference_library/cosmic/*
+/home/project/chode_reference_library/environments/*
+/home/project/chode_reference_library/memes/*
+/home/project/supabase/functions/*
+/home/project/src/intro/*
+src/intro/*
+/home/project/src/components/AdminPanel/*
+AdminPanel/*
+intro/*
