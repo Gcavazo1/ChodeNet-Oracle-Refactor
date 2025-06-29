@@ -1,51 +1,7 @@
 chode_reference_library/*
 supabase/*
 supabase/functions/*
-/home/create table public.chode_lore_entries (
-  id uuid not null default gen_random_uuid (),
-  created_at timestamp with time zone null default now(),
-  lore_cycle_id uuid null,
-  story_title text not null,
-  story_text text not null,
-  story_summary text null,
-  comic_panel_url text null,
-  tts_audio_url text null,
-  generation_prompt text null,
-  sd_prompt text null,
-  input_count integer null,
-  oracle_corruption_level text null default 'pristine'::text,
-  text_generation_status text null default 'pending'::text,
-  image_generation_status text null default 'pending'::text,
-  audio_generation_status text null default 'pending'::text,
-  view_count integer null default 0,
-  like_count integer null default 0,
-  share_count integer null default 0,
-  story_metadata jsonb null default '{}'::jsonb,
-  updated_at timestamp with time zone null default now(),
-  tts_provider character varying(50) null,
-  constraint chode_lore_entries_pkey primary key (id),
-  constraint chode_lore_entries_lore_cycle_id_fkey foreign KEY (lore_cycle_id) references lore_cycles (id),
-  constraint chk_oracle_corruption_level check (
-    (
-      oracle_corruption_level = any (
-        array[
-          'pristine'::text,
-          'cryptic'::text,
-          'flickering'::text,
-          'glitched_ominous'::text,
-          'forbidden_fragment'::text
-        ]
-      )
-    )
-  )
-) TABLESPACE pg_default;
-
-create index IF not exists idx_lore_entries_cycle on public.chode_lore_entries using btree (lore_cycle_id) TABLESPACE pg_default;
-
-create trigger normalize_corruption_level_trig BEFORE INSERT
-or
-update on chode_lore_entries for EACH row
-execute FUNCTION normalize_corruption_level_trigger ();
+/home/project/chode_reference_library/characters/*
 /home/project/chode_reference_library/chodes/*
 /home/project/chode_reference_library/cosmic/*
 /home/project/chode_reference_library/environments/*
@@ -62,3 +18,8 @@ chodes/*
 cosmic/*
 environments/*
 memes/*
+project/chode_reference_library/characters/*
+project/chode_reference_library/chodes/*
+project/chode_reference_library/cosmic/*
+project/chode_reference_library/environments/*
+project/chode_reference_library/memes/*
